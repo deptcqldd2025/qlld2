@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xử Lý Hồ Sơ - Ver 1.6</title>
+    <title>Xử Lý Hồ Sơ - Ver 1.7</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
         .form-section-title {
@@ -16,14 +17,26 @@
         .required-star { color: red; }
         #loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.8); z-index: 9999;
-            display: none; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.9); z-index: 9999;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
         }
+        /* Vùng Upload File */
+        .upload-area {
+            border: 2px dashed #0d6efd;
+            border-radius: 10px;
+            background-color: #f1f8ff;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .upload-area:hover { background-color: #e3f2fd; }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay"><div class="spinner-border text-primary" role="status"></div></div>
+    <div id="loading-overlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="mt-2 fw-bold text-primary" id="loadingText">Đang xử lý...</div>
+    </div>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
         <div class="container">
@@ -33,10 +46,20 @@
     </nav>
 
     <div class="container pb-5" style="max-width: 800px;">
+        
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4 text-center upload-area" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                <h5 class="fw-bold">Tự động nhập liệu từ file PDF</h5>
+                <p class="text-muted small mb-0">Nhấn để chọn file "Giấy đề nghị" (BM-01). Hệ thống sẽ tự điền thông tin.</p>
+                <input type="file" id="fileInput" accept="application/pdf" hidden>
+            </div>
+        </div>
+
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0 text-primary" id="pageTitle"><i class="fas fa-folder-plus me-2"></i>Tiếp nhận Hồ sơ</h4>
-                <span class="badge bg-warning text-dark d-none" id="editModeBadge">CHẾ ĐỘ CHỈNH SỬA</span>
+                <span class="badge bg-warning text-dark d-none" id="editModeBadge">CHẾ ĐỘ SỬA</span>
             </div>
             <div class="card-body p-4">
                 <form id="recordForm">
@@ -47,13 +70,20 @@
                             <label class="form-label">Ngày nộp <span class="required-star">*</span></label>
                             <input type="date" class="form-control" id="submissionDate" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Người đứng đơn <span class="required-star">*</span></label>
-                            <input type="text" class="form-control" id="applicantName" required>
+                        <div class="col-md-8">
+                            <label class="form-label">Tên người nộp / Chủ đầu tư <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="applicantName" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToOwner()"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Tên Chủ nhà (Nếu khác)</label>
+                            <input type="text" class="form-control" id="ownerName">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Chủ nhà (Nếu khác)</label>
-                            <input type="text" class="form-control" id="ownerName">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="phoneNumber" placeholder="Tự động đọc...">
                         </div>
                     </div>
 
@@ -72,15 +102,15 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Số nhà</label>
-                            <input type="text" class="form-control" id="addressNumber" placeholder="194D/4">
+                            <input type="text" class="form-control" id="addressNumber" placeholder="VD: 194D/4">
                         </div>
                         <div class="col-md-9">
                             <label class="form-label">Tên đường / Ấp <span class="required-star">*</span></label>
-                            <input type="text" class="form-control" id="streetName" placeholder="Trung Mỹ Tây 17" required>
+                            <input type="text" class="form-control" id="streetName" placeholder="VD: Trung Mỹ Tây 17" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Thông tin đất (Nếu chưa có số nhà)</label>
-                            <input type="text" class="form-control" id="plotInfo" placeholder="Thửa số..., Tờ bản đồ số...">
+                            <label class="form-label">Thông tin đất (Thửa/Tờ bản đồ)</label>
+                            <input type="text" class="form-control" id="plotInfo" placeholder="Đang đọc từ file...">
                         </div>
                     </div>
 
@@ -112,7 +142,7 @@
                 </form>
             </div>
         </div>
-        <div class="text-center mt-3 text-muted small">Ver 1.6</div>
+        <div class="text-center mt-3 text-muted small">Ver 1.7 - AI Parser Support</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -120,21 +150,27 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
+        // --- 1. CONFIG & INIT ---
         const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // --- 2. DỮ LIỆU ĐỊA CHÍNH (HCM) ---
         const hcmData = {
             "Quận 12": ["Phường An Phú Đông", "Phường Đông Hưng Thuận", "Phường Hiệp Thành", "Phường Tân Chánh Hiệp", "Phường Tân Hưng Thuận", "Phường Tân Thới Hiệp", "Phường Tân Thới Nhất", "Phường Thạnh Lộc", "Phường Thạnh Xuân", "Phường Thới An", "Phường Trung Mỹ Tây"],
-            "Gò Vấp": ["Phường 1", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Phường 16", "Phường 17"],
+            "Gò Vấp": ["Phường 1", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Phường 16"],
             "Hóc Môn": ["Thị trấn Hóc Môn", "Xã Bà Điểm", "Xã Đông Thạnh", "Xã Nhị Bình", "Xã Tân Hiệp", "Xã Tân Thới Nhì", "Xã Tân Xuân", "Xã Thới Tam Thôn", "Xã Trung Chánh", "Xã Xuân Thới Đông", "Xã Xuân Thới Sơn", "Xã Xuân Thới Thượng"]
         };
 
         const districtSelect = document.getElementById('districtSelect');
         const wardDataList = document.getElementById('wardDataList');
         const wardInput = document.getElementById('wardInput');
-        
+
+        // Init Dropdowns
         for (const d in hcmData) {
             const opt = document.createElement('option');
             opt.value = d; opt.textContent = d;
@@ -154,10 +190,127 @@
 
         districtSelect.addEventListener('change', function() {
             populateWards(this.value);
-            wardInput.value = ""; 
+            wardInput.value = "";
         });
 
-        // --- TỰ ĐỘNG PHÁT HIỆN CHẾ ĐỘ SỬA ---
+        // Helper: Copy name
+        function copyToOwner() {
+            document.getElementById('ownerName').value = document.getElementById('applicantName').value;
+        }
+
+        // --- 3. XỬ LÝ FILE PDF & AI PARSER ---
+        const fileInput = document.getElementById('fileInput');
+        
+        fileInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('loadingText').textContent = "Đang đọc nội dung file PDF...";
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                // 1. Đọc text từ PDF
+                const textContent = await extractTextFromPDF(file);
+                console.log("Extracted Text:", textContent);
+
+                // 2. Phân tích & Điền form (Parsing)
+                parseAndFillForm(textContent);
+                
+                alert("Đã đọc xong! Vui lòng kiểm tra lại thông tin trước khi lưu.");
+            } catch (error) {
+                console.error("Lỗi đọc PDF:", error);
+                alert("Không thể đọc file này tự động. Vui lòng nhập tay.");
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        });
+
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            let fullText = "";
+
+            // Chỉ đọc trang 1 (thường chứa thông tin chính)
+            const page = await pdf.getPage(1);
+            const textContent = await page.getTextContent();
+            
+            // Nối các đoạn text lại
+            textContent.items.forEach(item => {
+                fullText += item.str + " ";
+            });
+            
+            return fullText;
+        }
+
+        function parseAndFillForm(text) {
+            // Chuẩn hóa text: xóa khoảng trắng thừa
+            text = text.replace(/\s+/g, ' ');
+
+            // --- A. TÌM TÊN (Tổ chức / Cá nhân) ---
+            // Pattern: "Tên tổ chức/cá nhân: ... Địa chỉ"
+            const nameRegex = /(?:Tên tổ chức\/cá nhân|Ông\/Bà|Kính gửi)[:\s\.]+(.*?)(?:Địa chỉ|Sinh ngày)/i;
+            const nameMatch = text.match(nameRegex);
+            if (nameMatch && nameMatch[1]) {
+                const cleanName = nameMatch[1].replace(/[:\.]/g, '').trim();
+                document.getElementById('applicantName').value = cleanName;
+                document.getElementById('ownerName').value = cleanName;
+            }
+
+            // --- B. TÌM SỐ ĐIỆN THOẠI ---
+            const phoneRegex = /(?:0\d{9}|84\d{9}|0\d{3}[\s\.]\d{3}[\s\.]\d{3})/;
+            const phoneMatch = text.match(phoneRegex);
+            if (phoneMatch) {
+                document.getElementById('phoneNumber').value = phoneMatch[0].replace(/[\s\.]/g, '');
+            }
+
+            // --- C. TÌM ĐỊA CHỈ (Khó nhất) ---
+            // Pattern: "Địa chỉ: 194.0/4... đường... Quận 12"
+            // Tìm Quận trước để lọc
+            let detectedDistrict = "";
+            for (const d in hcmData) {
+                if (text.toLowerCase().includes(d.toLowerCase())) {
+                    detectedDistrict = d;
+                    document.getElementById('districtSelect').value = d;
+                    populateWards(d); // Kích hoạt load phường
+                    break;
+                }
+            }
+
+            // Tìm Phường
+            if (detectedDistrict) {
+                const wards = hcmData[detectedDistrict];
+                for (const w of wards) {
+                    // Cắt bỏ chữ "Phường" để tìm cho dễ (VD: tìm "Trung Mỹ Tây")
+                    const shortW = w.replace('Phường', '').replace('Xã', '').trim();
+                    if (text.toLowerCase().includes(shortW.toLowerCase())) {
+                        document.getElementById('wardInput').value = w;
+                        break;
+                    }
+                }
+            }
+
+            // Tìm Số nhà & Đường (Cố gắng tách từ chuỗi "Địa chỉ:")
+            const addressRegex = /(?:Địa chỉ|địa chỉ)[:\s]+(.*?)(?:Quận|Huyện|Phường|Xã|Tp|Thành phố)/i;
+            const addrMatch = text.match(addressRegex);
+            if (addrMatch && addrMatch[1]) {
+                let fullAddr = addrMatch[1].trim();
+                // Giả định: Số nhà thường ở đầu, đường ở sau
+                // Cắt theo dấu phẩy hoặc chữ "đường"
+                const parts = fullAddr.split(/,| đường /i);
+                if (parts.length > 0) document.getElementById('addressNumber').value = parts[0].trim();
+                if (parts.length > 1) document.getElementById('streetName').value = parts[1].trim();
+                else document.getElementById('streetName').value = fullAddr; // Nếu ko tách được thì điền hết vào
+            }
+
+            // --- D. THÔNG TIN ĐẤT (Thửa/Tờ) ---
+            const plotRegex = /(?:thửa|thửa đất)[\s:]*(\d+)[\s,]+(?:tờ|tờ bản đồ)[\s:]*(\d+)/i;
+            const plotMatch = text.match(plotRegex);
+            if (plotMatch) {
+                document.getElementById('plotInfo').value = `Thửa ${plotMatch[1]}, Tờ ${plotMatch[2]}`;
+            }
+        }
+
+        // --- 4. CÁC LOGIC CŨ (Save, Auth...) ---
         const urlParams = new URLSearchParams(window.location.search);
         const recordId = urlParams.get('id');
         
@@ -165,39 +318,27 @@
             document.getElementById('pageTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Cập nhật Hồ sơ';
             document.getElementById('editModeBadge').classList.remove('d-none');
             document.getElementById('btnSave').innerHTML = '<i class="fas fa-save me-2"></i>Cập nhật';
-            document.title = "Cập nhật Hồ sơ";
             loadRecordData(recordId);
         } else {
             document.getElementById('submissionDate').valueAsDate = new Date();
         }
 
         async function loadRecordData(id) {
-            document.getElementById('loading-overlay').style.display = 'flex';
-            try {
-                const doc = await db.collection('records').doc(id).get();
-                if (doc.exists) {
-                    const d = doc.data();
-                    document.getElementById('submissionDate').value = d.submissionDate;
-                    document.getElementById('applicantName').value = d.applicantName;
-                    document.getElementById('ownerName').value = d.ownerName;
-                    document.getElementById('addressNumber').value = d.number || '';
-                    document.getElementById('streetName').value = d.street;
-                    document.getElementById('plotInfo').value = d.plotInfo || '';
-                    document.getElementById('landType').value = d.landType;
-                    document.getElementById('purpose').value = d.purpose;
-
-                    document.getElementById('districtSelect').value = d.district;
-                    populateWards(d.district); 
-                    document.getElementById('wardInput').value = d.ward;
-                } else {
-                    alert("Hồ sơ không tồn tại!");
-                    window.location.href = "index.html";
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Lỗi tải dữ liệu!");
-            } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
+            const doc = await db.collection('records').doc(id).get();
+            if (doc.exists) {
+                const d = doc.data();
+                document.getElementById('submissionDate').value = d.submissionDate;
+                document.getElementById('applicantName').value = d.applicantName;
+                document.getElementById('ownerName').value = d.ownerName;
+                document.getElementById('phoneNumber').value = d.phoneNumber || ''; // Load sđt
+                document.getElementById('addressNumber').value = d.number || '';
+                document.getElementById('streetName').value = d.street;
+                document.getElementById('plotInfo').value = d.plotInfo || '';
+                document.getElementById('landType').value = d.landType;
+                document.getElementById('purpose').value = d.purpose;
+                document.getElementById('districtSelect').value = d.district;
+                populateWards(d.district); 
+                document.getElementById('wardInput').value = d.ward;
             }
         }
 
@@ -212,6 +353,7 @@
 
         document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            document.getElementById('loadingText').textContent = "Đang lưu dữ liệu...";
             document.getElementById('loading-overlay').style.display = 'flex';
             const user = auth.currentUser;
 
@@ -219,17 +361,15 @@
                 submissionDate: document.getElementById('submissionDate').value,
                 applicantName: document.getElementById('applicantName').value,
                 ownerName: document.getElementById('ownerName').value || document.getElementById('applicantName').value,
-                
+                phoneNumber: document.getElementById('phoneNumber').value,
                 district: districtSelect.value,
                 ward: wardInput.value,
                 street: document.getElementById('streetName').value,
                 number: document.getElementById('addressNumber').value,
                 plotInfo: document.getElementById('plotInfo').value,
                 fullAddress: `${document.getElementById('addressNumber').value} ${document.getElementById('streetName').value}, ${wardInput.value}, ${districtSelect.value}`,
-
                 landType: document.getElementById('landType').value,
                 purpose: document.getElementById('purpose').value,
-                
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedBy: user.email
             };
@@ -249,6 +389,7 @@
             } catch (error) {
                 console.error("Lỗi:", error);
                 alert("Lỗi: " + error.message);
+            } finally {
                 document.getElementById('loading-overlay').style.display = 'none';
             }
         });
