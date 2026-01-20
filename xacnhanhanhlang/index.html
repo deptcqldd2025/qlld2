@@ -3,45 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Hồ Sơ - Ver 1.6</title>
+    <title>Quản Lý Hồ Sơ - Ver 1.7</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
         .screen { display: none; min-height: 100vh; }
         .active-screen { display: flex; flex-direction: column; }
+        
+        /* Login Styles */
         .login-container { max-width: 400px; margin: auto; padding-top: 100px; }
-        #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
         
+        /* Dashboard Styles */
         .status-badge { font-size: 0.85rem; padding: 5px 10px; border-radius: 20px; font-weight: 500; }
-        .bg-status-new { background-color: #e3f2fd; color: #0d6efd; }
-        .bg-status-locked { background-color: #e9ecef; color: #6c757d; }
+        .bg-status-new { background-color: #e3f2fd; color: #0d6efd; border: 1px solid #9ec5fe; }
+        .bg-status-locked { background-color: #e9ecef; color: #6c757d; border: 1px solid #ced4da; }
         
+        /* Modal Styles */
         .modal-label { font-weight: 600; color: #6c757d; font-size: 0.9rem; }
         .modal-value { font-weight: 500; color: #212529; }
+        
+        /* Loading */
+        #loading-overlay { 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(255,255,255,0.9); z-index: 9999; 
+            display: none; justify-content: center; align-items: center; 
+        }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay"><div class="spinner-border text-primary" role="status"></div></div>
+    <div id="loading-overlay">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
 
     <div id="login-screen" class="screen container">
         <div class="login-container">
-            <div class="card p-4 text-center border-0 shadow">
-                <div class="mb-4"><i class="fas fa-bolt fa-3x text-warning"></i><h3 class="mt-3 fw-bold">An Toàn Lưới Điện</h3></div>
-                <button id="btnLogin" class="btn btn-outline-dark btn-lg"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" class="me-2">Đăng nhập Gmail</button>
+            <div class="card p-4 text-center border-0 shadow-sm">
+                <div class="mb-4">
+                    <i class="fas fa-bolt fa-3x text-warning"></i>
+                    <h3 class="mt-3 fw-bold">An Toàn Lưới Điện</h3>
+                    <p class="text-muted">Hệ thống quản lý hồ sơ thỏa thuận</p>
+                </div>
+                <button id="btnLogin" class="btn btn-outline-dark btn-lg w-100">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" class="me-2">
+                    Đăng nhập bằng Gmail
+                </button>
             </div>
+            <div class="text-center mt-3 text-muted small">Ver 1.7</div>
         </div>
     </div>
 
     <div id="update-info-screen" class="screen container">
         <div class="login-container" style="padding-top: 50px;">
-            <div class="card p-4">
-                <h4 class="mb-3 text-primary">Cập nhật thông tin</h4>
+            <div class="card p-4 shadow-sm border-0">
+                <h4 class="mb-3 text-primary"><i class="fas fa-user-edit me-2"></i>Cập nhật thông tin</h4>
+                <p class="text-muted small">Vui lòng nhập thông tin để tiếp tục.</p>
                 <form id="formUpdateInfo">
-                    <input type="text" id="userName" class="form-control mb-3" placeholder="Họ và Tên" required>
-                    <input type="tel" id="userPhone" class="form-control mb-3" placeholder="Số điện thoại" required>
-                    <button type="submit" class="btn btn-primary w-100">Lưu & Tiếp tục</button>
+                    <div class="mb-3">
+                        <label class="form-label">Họ và Tên</label>
+                        <input type="text" id="userName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="tel" id="userPhone" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Lưu & Vào hệ thống</button>
                 </form>
             </div>
         </div>
@@ -49,19 +76,27 @@
 
     <div id="dashboard-screen" class="screen">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold" href="#"><i class="fas fa-bolt me-2"></i>QLHS Ver 1.6</a>
+            <div class="container-fluid px-4">
+                <a class="navbar-brand fw-bold" href="#"><i class="fas fa-bolt me-2"></i>QLHS Ver 1.7</a>
                 <div class="d-flex align-items-center text-white">
-                    <span id="navUserName" class="me-3 fw-bold"></span>
-                    <button id="btnLogout" class="btn btn-sm btn-light text-primary fw-bold">Thoát</button>
+                    <div class="text-end me-3 d-none d-sm-block">
+                        <div id="navUserName" class="fw-bold">...</div>
+                        <div class="small opacity-75">Nhân viên</div>
+                    </div>
+                    <button id="btnLogout" class="btn btn-sm btn-light text-primary fw-bold">
+                        <i class="fas fa-sign-out-alt me-1"></i> Thoát
+                    </button>
                 </div>
             </div>
         </nav>
 
-        <div class="container mt-4">
+        <div class="container mt-4 pb-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="text-secondary"><i class="fas fa-list-alt me-2"></i>Danh sách Hồ sơ</h4>
-                <a href="new.html" class="btn btn-success shadow-sm">
+                <div>
+                    <h4 class="text-secondary fw-bold mb-0"><i class="fas fa-list-alt me-2"></i>Danh sách Hồ sơ</h4>
+                    <small class="text-muted" id="totalRecords">Đang tải...</small>
+                </div>
+                <a href="new.html" class="btn btn-success shadow-sm fw-bold">
                     <i class="fas fa-plus me-2"></i>Tiếp nhận Mới
                 </a>
             </div>
@@ -74,18 +109,20 @@
                                 <tr>
                                     <th class="ps-4">Ngày nộp</th>
                                     <th>Chủ nhà / Địa chỉ</th>
-                                    <th>Phường / Quận</th>
-                                    <th>Loại / Mục đích</th>
+                                    <th>Khu vực</th>
+                                    <th>Nội dung</th>
                                     <th>Trạng thái</th>
                                     <th class="text-center">Tác vụ</th>
                                 </tr>
                             </thead>
-                            <tbody id="recordsTableBody"></tbody>
+                            <tbody id="recordsTableBody">
+                                </tbody>
                         </table>
                     </div>
                 </div>
                 <div id="emptyState" class="text-center p-5 d-none">
-                    <p class="text-muted">Chưa có hồ sơ nào.</p>
+                    <i class="fas fa-folder-open fa-3x text-muted opacity-25 mb-3"></i>
+                    <p class="text-muted">Chưa có hồ sơ nào trong hệ thống.</p>
                 </div>
             </div>
         </div>
@@ -109,9 +146,13 @@
                             <div class="modal-label">Ngày tiếp nhận:</div>
                             <div class="modal-value" id="mDate"></div>
                         </div>
+                        <div class="col-md-6 mb-2">
+                            <div class="modal-label">Số điện thoại:</div>
+                            <div class="modal-value" id="mPhone"></div>
+                        </div>
                         <div class="col-md-12">
-                            <div class="modal-label">Chủ sở hữu:</div>
-                            <div class="modal-value text-primary" id="mOwner"></div>
+                            <div class="modal-label">Chủ sở hữu (trên giấy tờ):</div>
+                            <div class="modal-value text-primary fw-bold" id="mOwner"></div>
                         </div>
                     </div>
 
@@ -122,11 +163,11 @@
                             <div class="modal-value" id="mAddress"></div>
                         </div>
                         <div class="col-md-6 mb-2">
-                            <div class="modal-label">Thông tin thửa đất:</div>
+                            <div class="modal-label">Thông tin đất:</div>
                             <div class="modal-value" id="mPlot"></div>
                         </div>
                         <div class="col-md-6 mb-2">
-                            <div class="modal-label">Hiện trạng:</div>
+                            <div class="modal-label">Hiện trạng đất:</div>
                             <div class="modal-value" id="mLandType"></div>
                         </div>
                     </div>
@@ -138,13 +179,14 @@
                             <div class="modal-value" id="mPurpose"></div>
                         </div>
                         <div class="col-md-4">
-                            <div class="modal-label">Trạng thái xử lý:</div>
+                            <div class="modal-label">Trạng thái hiện tại:</div>
                             <div id="mStatus"></div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="alert('Chức năng in đang phát triển')"><i class="fas fa-print me-2"></i>In Phiếu</button>
                 </div>
             </div>
         </div>
@@ -156,42 +198,94 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
+        // --- 1. CẤU HÌNH & KHỞI TẠO ---
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", 
+            authDomain: "tavietnam-78ae8.firebaseapp.com", 
+            projectId: "tavietnam-78ae8", 
+            storageBucket: "tavietnam-78ae8.firebasestorage.app", 
+            messagingSenderId: "670121705534", 
+            appId: "1:670121705534:web:1027ad98550573ad37116f" 
+        };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const provider = new firebase.auth.GoogleAuthProvider();
 
         let localRecordsMap = {}; 
-        let viewModal;
+        let viewModal; // Biến giữ Modal
 
+        // Quản lý màn hình
         const UI = {
-            screens: { login: document.getElementById('login-screen'), updateInfo: document.getElementById('update-info-screen'), dashboard: document.getElementById('dashboard-screen') },
+            screens: { 
+                login: document.getElementById('login-screen'), 
+                updateInfo: document.getElementById('update-info-screen'), 
+                dashboard: document.getElementById('dashboard-screen') 
+            },
             loader: document.getElementById('loading-overlay'),
-            showScreen(name) { Object.values(this.screens).forEach(el => el.classList.remove('active-screen')); this.screens[name].classList.add('active-screen'); this.toggleLoader(false); },
-            toggleLoader(show) { this.loader.style.display = show ? 'flex' : 'none'; }
+            
+            showScreen(name) { 
+                Object.values(this.screens).forEach(el => el.classList.remove('active-screen')); 
+                this.screens[name].classList.add('active-screen'); 
+                this.toggleLoader(false); 
+            },
+            toggleLoader(show) { 
+                this.loader.style.display = show ? 'flex' : 'none'; 
+            }
         };
 
+        // --- 2. AUTHENTICATION LOGIC ---
         auth.onAuthStateChanged(async (user) => {
             if (user) {
+                // Kiểm tra user trong DB
                 const doc = await db.collection('users').doc(user.email).get();
                 if (doc.exists) {
                     document.getElementById('navUserName').textContent = doc.data().fullName;
                     UI.showScreen('dashboard');
-                    loadRecords();
+                    loadRecords(); // Tải dữ liệu
+                    // Khởi tạo Modal Bootstrap
                     viewModal = new bootstrap.Modal(document.getElementById('viewDetailModal'));
                 } else {
                     UI.showScreen('updateInfo');
                 }
-            } else { UI.showScreen('login'); }
+            } else { 
+                UI.showScreen('login'); 
+            }
         });
 
+        // Đăng nhập
+        document.getElementById('btnLogin').addEventListener('click', () => auth.signInWithPopup(provider));
+        
+        // Đăng xuất
+        document.getElementById('btnLogout').addEventListener('click', () => auth.signOut().then(() => window.location.reload()));
+        
+        // Cập nhật thông tin lần đầu
+        document.getElementById('formUpdateInfo').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            if(!user) return;
+            
+            UI.toggleLoader(true);
+            await db.collection('users').doc(user.email).set({
+                email: user.email, 
+                fullName: document.getElementById('userName').value, 
+                phone: document.getElementById('userPhone').value, 
+                role: 'Nhân viên',
+                uid: user.uid
+            });
+            window.location.reload();
+        });
+
+        // --- 3. DASHBOARD LOGIC (Real-time) ---
         function loadRecords() {
             const tbody = document.getElementById('recordsTableBody');
+            const totalLabel = document.getElementById('totalRecords');
             
+            // Lắng nghe thay đổi từ Firestore
             db.collection('records').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
                 tbody.innerHTML = '';
                 localRecordsMap = {};
+                totalLabel.textContent = `Tổng số: ${snapshot.size} hồ sơ`;
 
                 if (snapshot.empty) {
                     document.getElementById('emptyState').classList.remove('d-none');
@@ -203,32 +297,47 @@
                         const id = doc.id;
                         localRecordsMap[id] = { ...d, id };
 
-                        const date = d.submissionDate ? new Date(d.submissionDate).toLocaleDateString('vi-VN') : 'N/A';
+                        // Format ngày
+                        const dateStr = d.submissionDate ? new Date(d.submissionDate).toLocaleDateString('vi-VN') : '---';
+                        
+                        // Kiểm tra khóa (Locked)
                         const isLocked = d.isLocked === true || d.status === 'Đã duyệt';
                         
-                        // XỬ LÝ NÚT SỬA (FIXED)
-                        const editAction = isLocked ? '' : `onclick="handleEdit('${id}')"`;
-                        const editClass = isLocked ? 'btn-secondary disabled' : 'btn-outline-primary';
+                        // Nút Sửa
+                        const editBtnClass = isLocked ? 'btn-secondary disabled' : 'btn-outline-primary';
+                        const editIcon = isLocked ? 'fa-lock' : 'fa-edit';
+                        // Quan trọng: Dùng chuỗi để tránh lỗi cú pháp
+                        const editAction = isLocked ? '' : "handleEdit('" + id + "')";
 
+                        // Render dòng
                         const row = `
                             <tr>
-                                <td class="ps-4 text-nowrap">${date}</td>
+                                <td class="ps-4 text-nowrap">${dateStr}</td>
                                 <td>
-                                    <div class="fw-bold text-dark text-truncate" style="max-width: 200px;">${d.ownerName}</div>
-                                    <div class="small text-muted"><i class="fas fa-map-marker-alt me-1"></i>${d.fullAddress || '---'}</div>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 220px;">${d.ownerName}</div>
+                                    <div class="small text-muted"><i class="fas fa-map-marker-alt me-1"></i>${d.number || ''} ${d.street}</div>
                                 </td>
                                 <td>
-                                    <div>${d.ward}</div>
-                                    <small class="text-primary">${d.district}</small>
+                                    <div class="text-truncate" style="max-width: 150px;">${d.ward}</div>
+                                    <small class="text-primary fw-bold">${d.district}</small>
                                 </td>
                                 <td>
                                     <div class="badge bg-light text-dark border mb-1">${d.landType}</div>
+                                    <div class="small text-muted text-truncate" style="max-width: 180px;">${d.purpose}</div>
                                 </td>
-                                <td><span class="badge ${isLocked ? 'bg-status-locked' : 'bg-status-new'} status-badge">${isLocked ? 'Đã khóa' : d.status}</span></td>
+                                <td>
+                                    <span class="badge ${isLocked ? 'bg-status-locked' : 'bg-status-new'} status-badge">
+                                        ${isLocked ? 'Đã khóa' : (d.status || 'Mới')}
+                                    </span>
+                                </td>
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-info" onclick="handleView('${id}')"><i class="fas fa-eye"></i></button>
-                                        <button class="btn btn-sm ${editClass}" ${editAction}><i class="fas fa-edit"></i></button>
+                                        <button class="btn btn-sm btn-outline-info" onclick="handleView('${id}')" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm ${editBtnClass}" onclick="${editAction}" title="${isLocked ? 'Đã khóa' : 'Sửa hồ sơ'}">
+                                            <i class="fas ${editIcon}"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -239,38 +348,36 @@
             });
         }
 
+        // --- 4. HÀM XỬ LÝ SỰ KIỆN ---
+
+        // Xem chi tiết (Mở Modal)
         window.handleView = function(id) {
             const r = localRecordsMap[id];
             if (!r) return;
+
             document.getElementById('mApplicant').textContent = r.applicantName;
             document.getElementById('mDate').textContent = r.submissionDate ? new Date(r.submissionDate).toLocaleDateString('vi-VN') : '';
+            document.getElementById('mPhone').textContent = r.phoneNumber || 'Không có';
             document.getElementById('mOwner').textContent = r.ownerName;
-            document.getElementById('mAddress').textContent = r.fullAddress;
+            
+            document.getElementById('mAddress').textContent = r.fullAddress || (r.number + ' ' + r.street + ', ' + r.ward + ', ' + r.district);
             document.getElementById('mPlot').textContent = r.plotInfo || '(Chưa cập nhật)';
             document.getElementById('mLandType').textContent = r.landType;
+            
             document.getElementById('mPurpose').textContent = r.purpose;
             
             const statusClass = (r.isLocked || r.status === 'Đã duyệt') ? 'bg-secondary' : 'bg-primary';
-            document.getElementById('mStatus').innerHTML = `<span class="badge ${statusClass}">${r.status}</span>`;
+            document.getElementById('mStatus').innerHTML = `<span class="badge ${statusClass}">${r.status || 'Mới'}</span>`;
+
             viewModal.show();
         }
 
-        // --- HÀM SỬA ĐÃ ĐƯỢC FIX LỖI ---
+        // Sửa hồ sơ (Chuyển trang) - ĐÃ FIX
         window.handleEdit = function(id) {
-            // Sử dụng backtick để truyền biến id vào URL
-            window.location.href = `new.html?id=${id}`;
+            // Sử dụng cộng chuỗi truyền thống để đảm bảo an toàn tuyệt đối
+            window.location.href = 'new.html?id=' + id;
         }
 
-        document.getElementById('btnLogin').addEventListener('click', () => auth.signInWithPopup(provider));
-        document.getElementById('btnLogout').addEventListener('click', () => auth.signOut().then(() => window.location.reload()));
-        document.getElementById('formUpdateInfo').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const user = auth.currentUser;
-            await db.collection('users').doc(user.email).set({
-                email: user.email, fullName: document.getElementById('userName').value, phone: document.getElementById('userPhone').value, role: 'Nhân viên'
-            });
-            window.location.reload();
-        });
     </script>
 </body>
 </html>
