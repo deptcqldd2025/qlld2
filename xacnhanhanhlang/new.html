@@ -3,20 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiếp Nhận Hồ Sơ Mới - Ver 1.4</title>
+    <title>Tiếp Nhận Hồ Sơ - Ver 1.5</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
         .form-section-title {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            color: #6c757d;
-            font-weight: bold;
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-            margin-top: 20px;
+            font-size: 0.9rem; text-transform: uppercase; color: #6c757d;
+            font-weight: bold; border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px; margin-bottom: 15px; margin-top: 20px;
         }
         .required-star { color: red; }
         #loading-overlay {
@@ -28,99 +23,93 @@
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <div class="spinner-border text-primary" role="status"></div>
-    </div>
+    <div id="loading-overlay"><div class="spinner-border text-primary" role="status"></div></div>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
         <div class="container">
             <a class="navbar-brand fw-bold" href="index.html"><i class="fas fa-chevron-left me-2"></i>Quay lại Dashboard</a>
-            <span class="navbar-text text-white small" id="currentUserDisplay">Đang tải...</span>
+            <span class="navbar-text text-white small" id="currentUserDisplay">...</span>
         </div>
     </nav>
 
     <div class="container pb-5" style="max-width: 800px;">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
-                <h4 class="card-title mb-0 text-primary"><i class="fas fa-folder-plus me-2"></i>Tiếp nhận Hồ sơ mới</h4>
+                <h4 class="card-title mb-0 text-primary"><i class="fas fa-folder-plus me-2"></i>Tiếp nhận Hồ sơ (Ver 1.5)</h4>
             </div>
             <div class="card-body p-4">
                 <form id="newRecordForm">
                     
                     <div class="form-section-title">1. Thông tin Hồ sơ</div>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Ngày nộp <span class="required-star">*</span></label>
                             <input type="date" class="form-control" id="submissionDate" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Người đứng đơn <span class="required-star">*</span></label>
-                            <input type="text" class="form-control" id="applicantName" placeholder="Họ tên người đi nộp" required>
+                            <input type="text" class="form-control" id="applicantName" required>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Tên Chủ nhà / Chủ đầu tư <span class="required-star">*</span></label>
-                            <input type="text" class="form-control" id="ownerName" placeholder="Nhập tên trên giấy tờ đất" required>
-                            <div class="form-text text-muted">Nếu giống người đứng đơn, có thể để nguyên.</div>
+                        <div class="col-md-4">
+                            <label class="form-label">Chủ nhà (Nếu khác)</label>
+                            <input type="text" class="form-control" id="ownerName">
                         </div>
                     </div>
 
-                    <div class="form-section-title">2. Địa điểm / Vị trí Khảo sát</div>
+                    <div class="form-section-title">2. Vị trí Khảo sát</div>
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Số nhà / Số</label>
-                            <input type="text" class="form-control" id="addressNumber" placeholder="VD: 194D/4">
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Đường / Ấp <span class="required-star">*</span></label>
-                            <input type="text" class="form-control" id="streetName" placeholder="VD: Trung Mỹ Tây 17" required>
+                        <div class="col-md-6">
+                            <label class="form-label">Quận / Huyện <span class="required-star">*</span></label>
+                            <select class="form-select" id="districtSelect" required>
+                                <option value="">-- Chọn Quận/Huyện --</option>
+                                </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Phường / Xã <span class="required-star">*</span></label>
-                            <select class="form-select" id="wardName" required>
-                                <option value="" selected disabled>Chọn Phường/Xã...</option>
-                                <option value="Trung Mỹ Tây">Trung Mỹ Tây</option>
-                                <option value="Tân Thới Nhất">Tân Thới Nhất</option>
-                                <option value="Đông Hưng Thuận">Đông Hưng Thuận</option>
-                                <option value="Tân Hưng Thuận">Tân Hưng Thuận</option>
-                                <option value="Khác">Khác (Ghi chú thêm)</option>
-                            </select>
+                            <input class="form-control" list="wardDataList" id="wardInput" placeholder="Nhập tên phường để lọc..." required>
+                            <datalist id="wardDataList">
+                                </datalist>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
+                            <label class="form-label">Số nhà</label>
+                            <input type="text" class="form-control" id="addressNumber" placeholder="194D/4">
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">Tên đường / Ấp <span class="required-star">*</span></label>
+                            <input type="text" class="form-control" id="streetName" placeholder="Trung Mỹ Tây 17" required>
+                        </div>
+                        <div class="col-12">
                             <label class="form-label">Thông tin đất (Nếu chưa có số nhà)</label>
-                            <input type="text" class="form-control" id="plotInfo" placeholder="VD: Thửa số 12, Tờ bản đồ số 5">
+                            <input type="text" class="form-control" id="plotInfo" placeholder="Thửa số..., Tờ bản đồ số...">
                         </div>
                     </div>
 
                     <div class="form-section-title">3. Phân loại & Mục đích</div>
-                    <div class="mb-3">
-                        <label class="form-label d-block">Hiện trạng đất <span class="required-star">*</span></label>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="landType" id="typeEmpty" value="Đất trống" checked>
-                            <label class="form-check-label" for="typeEmpty">Đất trống</label>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Hiện trạng đất <span class="required-star">*</span></label>
+                            <select class="form-select" id="landType">
+                                <option value="Đất trống">Đất trống</option>
+                                <option value="Đã có nhà/Công trình">Đã có nhà/Công trình</option>
+                            </select>
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="landType" id="typeHouse" value="Đã có nhà/Công trình">
-                            <label class="form-check-label" for="typeHouse">Đã có nhà / Công trình</label>
+                        <div class="col-md-6">
+                            <label class="form-label">Mục đích <span class="required-star">*</span></label>
+                            <select class="form-select" id="purpose">
+                                <option value="Cung cấp hiện trạng">Cung cấp hiện trạng quy hoạch</option>
+                                <option value="Xây dựng mới">Thỏa thuận an toàn Xây dựng mới</option>
+                                <option value="Cải tạo/Sửa chữa">Thỏa thuận an toàn Cải tạo/Sửa chữa</option>
+                            </select>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mục đích đề nghị <span class="required-star">*</span></label>
-                        <select class="form-select" id="purpose" required>
-                            <option value="Cung cấp hiện trạng quy hoạch">Cung cấp hiện trạng quy hoạch hành lang</option>
-                            <option value="Thỏa thuận xây dựng mới">Thỏa thuận biện pháp an toàn để Xây dựng mới</option>
-                            <option value="Thỏa thuận cải tạo/sửa chữa">Thỏa thuận biện pháp an toàn để Cải tạo/Sửa chữa</option>
-                            <option value="Khác">Khác</option>
-                        </select>
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="index.html" class="btn btn-light me-md-2">Hủy bỏ</a>
+                        <a href="index.html" class="btn btn-light me-md-2">Hủy</a>
                         <button type="submit" class="btn btn-success fw-bold"><i class="fas fa-save me-2"></i>Lưu Hồ Sơ</button>
                     </div>
                 </form>
             </div>
         </div>
-        <div class="text-center mt-3 text-muted small">Ver 1.4</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -128,86 +117,89 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // 1. CẤU HÌNH FIREBASE (Giống index.html)
-        const firebaseConfig = { 
-            apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", 
-            authDomain: "tavietnam-78ae8.firebaseapp.com", 
-            projectId: "tavietnam-78ae8", 
-            storageBucket: "tavietnam-78ae8.firebasestorage.app", 
-            messagingSenderId: "670121705534", 
-            appId: "1:670121705534:web:1027ad98550573ad37116f" 
-        };
+        // --- CẤU HÌNH ---
+        const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 2. LOGIC KHỞI TẠO
-        const loading = document.getElementById('loading-overlay');
-        
-        // Đặt ngày mặc định là hôm nay
-        document.getElementById('submissionDate').valueAsDate = new Date();
+        // --- DỮ LIỆU TP.HCM (Rút gọn các quận chính, có thể mở rộng) ---
+        const hcmData = {
+            "Quận 12": ["Phường An Phú Đông", "Phường Đông Hưng Thuận", "Phường Hiệp Thành", "Phường Tân Chánh Hiệp", "Phường Tân Hưng Thuận", "Phường Tân Thới Hiệp", "Phường Tân Thới Nhất", "Phường Thạnh Lộc", "Phường Thạnh Xuân", "Phường Thới An", "Phường Trung Mỹ Tây"],
+            "Gò Vấp": ["Phường 1", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Phường 16", "Phường 17"],
+            "Hóc Môn": ["Thị trấn Hóc Môn", "Xã Bà Điểm", "Xã Đông Thạnh", "Xã Nhị Bình", "Xã Tân Hiệp", "Xã Tân Thới Nhì", "Xã Tân Xuân", "Xã Thới Tam Thôn", "Xã Trung Chánh", "Xã Xuân Thới Đông", "Xã Xuân Thới Sơn", "Xã Xuân Thới Thượng"],
+            "Bình Tân": ["Phường An Lạc", "Phường An Lạc A", "Phường Bình Hưng Hòa", "Phường Bình Hưng Hòa A", "Phường Bình Hưng Hòa B", "Phường Bình Trị Đông", "Phường Bình Trị Đông A", "Phường Bình Trị Đông B", "Phường Tân Tạo", "Phường Tân Tạo A"],
+            "Tân Bình": ["Phường 1", "Phường 2", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15"],
+            "TP Thủ Đức": ["Phường An Khánh", "Phường An Lợi Đông", "Phường An Phú", "Phường Bình Chiểu", "Phường Bình Thọ", "Phường Bình Trưng Đông", "Phường Bình Trưng Tây", "Phường Cát Lái", "Phường Hiệp Bình Chánh", "Phường Hiệp Bình Phước", "Phường Hiệp Phú", "Phường Linh Chiểu", "Phường Linh Đông", "Phường Linh Tây", "Phường Linh Trung", "Phường Linh Xuân", "Phường Long Bình", "Phường Long Phước", "Phường Long Thạnh Mỹ", "Phường Long Trường", "Phường Phú Hữu", "Phường Phước Bình", "Phường Phước Long A", "Phường Phước Long B", "Phường Tam Bình", "Phường Tam Phú", "Phường Tân Phú", "Phường Tăng Nhơn Phú A", "Phường Tăng Nhơn Phú B", "Phường Thạnh Mỹ Lợi", "Phường Thảo Điền", "Phường Thủ Thiêm", "Phường Trường Thạnh", "Phường Trường Thọ"]
+        };
 
-        // Kiểm tra đăng nhập
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // Lấy tên người dùng để hiển thị trên góc
-                db.collection('users').doc(user.email).get().then(doc => {
-                    if(doc.exists) {
-                        document.getElementById('currentUserDisplay').textContent = `Xin chào, ${doc.data().fullName}`;
-                    }
+        // --- LOGIC XỬ LÝ ---
+        document.getElementById('submissionDate').valueAsDate = new Date();
+        const districtSelect = document.getElementById('districtSelect');
+        const wardInput = document.getElementById('wardInput');
+        const wardDataList = document.getElementById('wardDataList');
+
+        // 1. Nạp danh sách Quận
+        for (const district in hcmData) {
+            const option = document.createElement('option');
+            option.value = district;
+            option.textContent = district;
+            districtSelect.appendChild(option);
+        }
+
+        // 2. Sự kiện khi chọn Quận -> Cập nhật Phường
+        districtSelect.addEventListener('change', function() {
+            const selectedDistrict = this.value;
+            wardInput.value = ""; // Reset phường
+            wardDataList.innerHTML = ""; // Xóa list cũ
+
+            if (selectedDistrict && hcmData[selectedDistrict]) {
+                hcmData[selectedDistrict].forEach(ward => {
+                    const option = document.createElement('option');
+                    option.value = ward; // Giá trị hiển thị khi gõ
+                    wardDataList.appendChild(option);
                 });
-            } else {
-                // Nếu chưa đăng nhập, đá về trang chủ
-                alert("Vui lòng đăng nhập trước!");
-                window.location.href = "index.html";
             }
         });
 
-        // 3. XỬ LÝ LƯU FORM
+        // 3. Xử lý Lưu
+        auth.onAuthStateChanged(user => {
+            if(!user) window.location.href = "index.html";
+            else {
+                db.collection('users').doc(user.email).get().then(doc => {
+                    if(doc.exists) document.getElementById('currentUserDisplay').textContent = doc.data().fullName;
+                });
+            }
+        });
+
         document.getElementById('newRecordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            loading.style.display = 'flex';
+            document.getElementById('loading-overlay').style.display = 'flex';
 
             const user = auth.currentUser;
-            if(!user) return;
-
-            // Thu thập dữ liệu
-            const formData = {
+            const data = {
                 submissionDate: document.getElementById('submissionDate').value,
                 applicantName: document.getElementById('applicantName').value,
-                ownerName: document.getElementById('ownerName').value,
+                ownerName: document.getElementById('ownerName').value || document.getElementById('applicantName').value,
                 
-                // Địa chỉ ghép lại để hiển thị cho gọn sau này
-                fullAddress: `${document.getElementById('addressNumber').value} ${document.getElementById('streetName').value}, ${document.getElementById('wardName').value}`,
-                
-                addressDetails: {
-                    number: document.getElementById('addressNumber').value,
-                    street: document.getElementById('streetName').value,
-                    ward: document.getElementById('wardName').value,
-                    plotInfo: document.getElementById('plotInfo').value
-                },
+                // Address Data
+                district: districtSelect.value,
+                ward: wardInput.value,
+                street: document.getElementById('streetName').value,
+                number: document.getElementById('addressNumber').value,
+                plotInfo: document.getElementById('plotInfo').value,
+                fullAddress: `${document.getElementById('addressNumber').value} ${document.getElementById('streetName').value}, ${wardInput.value}, ${districtSelect.value}`,
 
-                landType: document.querySelector('input[name="landType"]:checked').value,
+                landType: document.getElementById('landType').value,
                 purpose: document.getElementById('purpose').value,
-
-                // Metadata hệ thống
-                status: 'Mới tiếp nhận', // Trạng thái ban đầu
-                createdByEmail: user.email,
-                createdById: user.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                
+                status: 'Mới tiếp nhận',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdBy: user.email
             };
 
-            try {
-                // Lưu vào collection 'records'
-                await db.collection('records').add(formData);
-                
-                alert("Đã tiếp nhận hồ sơ thành công!");
-                window.location.href = "index.html"; // Quay về Dashboard
-            } catch (error) {
-                console.error("Lỗi lưu:", error);
-                alert("Lỗi: " + error.message);
-                loading.style.display = 'none';
-            }
+            await db.collection('records').add(data);
+            window.location.href = "index.html";
         });
     </script>
 </body>
