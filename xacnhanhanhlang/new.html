@@ -3,28 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xử Lý Hồ Sơ - Ver 1.7.1</title>
+    <title>Xử Lý Hồ Sơ - Ver 2.0</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .form-section-title {
-            font-size: 0.9rem; text-transform: uppercase; color: #6c757d;
-            font-weight: bold; border-bottom: 2px solid #e9ecef;
-            padding-bottom: 5px; margin-bottom: 15px; margin-top: 20px;
-        }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 50px; }
+        
+        /* Section Styling */
+        .section-card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px; overflow: hidden; }
+        .section-header { padding: 15px 20px; font-weight: bold; text-transform: uppercase; color: white; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        
+        .bg-sec-1 { background: linear-gradient(45deg, #4b6cb7, #182848); } /* Xanh đậm */
+        .bg-sec-2 { background: linear-gradient(45deg, #11998e, #38ef7d); } /* Xanh lá */
+        .bg-sec-3 { background: linear-gradient(45deg, #8E2DE2, #4A00E0); } /* Tím */
+        
+        .locked-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.6); z-index: 10; cursor: not-allowed; display: none; }
+        .is-locked .locked-overlay { display: block; }
+        
+        /* Form elements */
+        .form-label { font-weight: 500; font-size: 0.9rem; color: #555; }
         .required-star { color: red; }
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.9); z-index: 9999;
-            display: none; justify-content: center; align-items: center; flex-direction: column;
-        }
-        .upload-area {
-            border: 2px dashed #0d6efd; border-radius: 10px; background-color: #f1f8ff;
-            transition: all 0.3s; cursor: pointer;
-        }
-        .upload-area:hover { background-color: #e3f2fd; }
+        
+        /* Timeline DO */
+        .do-timeline { display: flex; justify-content: space-between; position: relative; margin: 20px 0; }
+        .do-step { text-align: center; position: relative; z-index: 2; width: 20%; opacity: 0.5; transition: all 0.3s; cursor: pointer; }
+        .do-step.active { opacity: 1; font-weight: bold; color: #0d6efd; }
+        .do-circle { width: 30px; height: 30px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; border: 2px solid #adb5bd; transition: all 0.3s; }
+        .do-step.active .do-circle { background: #0d6efd; border-color: #0d6efd; color: white; }
+        .do-line { position: absolute; top: 15px; left: 10%; right: 10%; height: 2px; background: #dee2e6; z-index: 1; }
+
+        /* Review Box */
+        .review-box { background: #fff3cd; border: 1px solid #ffecb5; border-radius: 8px; padding: 15px; margin-top: 10px; }
+        .approved-box { background: #d1e7dd; border: 1px solid #badbcc; }
+        
+        #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -34,110 +47,223 @@
         <div class="mt-2 fw-bold text-primary" id="loadingText">Đang tải dữ liệu...</div>
     </div>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top mb-4">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="index.html"><i class="fas fa-chevron-left me-2"></i>Quay lại Dashboard</a>
-            <span class="navbar-text text-white small" id="currentUserDisplay">...</span>
+            <a class="navbar-brand fw-bold" href="index.html"><i class="fas fa-arrow-left me-2"></i>Dashboard</a>
+            <div class="text-white small">
+                <span id="recordIdDisplay" class="badge bg-secondary me-2">Mới</span>
+                <span id="solverDisplay" class="badge bg-info text-dark">Chưa phân công</span>
+            </div>
         </div>
     </nav>
 
-    <div class="container pb-5" style="max-width: 800px;">
-        
-        <div class="card shadow-sm border-0 mb-4" id="uploadSection">
-            <div class="card-body p-4 text-center upload-area" onclick="document.getElementById('fileInput').click()">
-                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                <h5 class="fw-bold">Tự động nhập liệu từ file PDF</h5>
-                <p class="text-muted small mb-0">Nhấn để chọn file "Giấy đề nghị" (BM-01).</p>
-                <input type="file" id="fileInput" accept="application/pdf" hidden>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0 text-primary" id="pageTitle"><i class="fas fa-folder-plus me-2"></i>Tiếp nhận Hồ sơ</h4>
-                <span class="badge bg-warning text-dark d-none" id="editModeBadge">CHẾ ĐỘ SỬA</span>
-            </div>
-            <div class="card-body p-4">
-                <form id="recordForm">
-                    <div class="form-section-title">1. Thông tin Hồ sơ</div>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Ngày nộp <span class="required-star">*</span></label>
-                            <input type="date" class="form-control" id="submissionDate" required>
+    <div class="container" style="max-width: 900px;">
+        <form id="mainForm">
+            
+            <div class="section-card" id="section1">
+                <div class="section-header bg-sec-1" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                    <span><i class="fas fa-file-import me-2"></i>Phần 1. Tiếp nhận Hồ sơ</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div id="collapse1" class="collapse show">
+                    <div class="card-body p-4 position-relative">
+                        <div class="locked-overlay" id="overlay1" title="Đã khóa do đã phân công xử lý"></div>
+                        
+                        <div class="mb-3 p-3 border border-primary border-dashed rounded bg-light text-center" id="uploadArea">
+                            <i class="fas fa-magic text-primary me-2"></i>
+                            <span class="text-primary fw-bold cursor-pointer" onclick="document.getElementById('fileInput').click()" style="cursor: pointer;">Tự động điền từ PDF (BM-01)</span>
+                            <input type="file" id="fileInput" accept="application/pdf" hidden>
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Tên người nộp / CĐT <span class="required-star">*</span></label>
-                            <div class="input-group">
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Ngày nộp <span class="required-star">*</span></label>
+                                <input type="date" class="form-control" id="submissionDate" required>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Tên người nộp / CĐT <span class="required-star">*</span></label>
                                 <input type="text" class="form-control" id="applicantName" required>
-                                <button class="btn btn-outline-secondary" type="button" onclick="copyToOwner()"><i class="fas fa-copy"></i></button>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Tên Chủ nhà (Nếu khác)</label>
+                                <input type="text" class="form-control" id="ownerName">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="text" class="form-control" id="phoneNumber">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Địa chỉ công trình <span class="required-star">*</span></label>
+                                <input type="text" class="form-control" id="fullAddress" placeholder="Số nhà, Đường, Phường, Quận..." required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mục đích</label>
+                                <select class="form-select" id="purpose">
+                                    <option value="Cung cấp hiện trạng">Cung cấp hiện trạng</option>
+                                    <option value="Xây dựng mới">Xây dựng mới</option>
+                                    <option value="Cải tạo/Sửa chữa">Cải tạo/Sửa chữa</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hiện trạng đất</label>
+                                <select class="form-select" id="landType">
+                                    <option value="Đất trống">Đất trống</option>
+                                    <option value="Đã có nhà">Đã có nhà</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Tên Chủ nhà (Nếu khác)</label>
-                            <input type="text" class="form-control" id="ownerName">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Số điện thoại</label>
-                            <input type="text" class="form-control" id="phoneNumber" placeholder="SĐT liên hệ...">
-                        </div>
                     </div>
-
-                    <div class="form-section-title">2. Vị trí Khảo sát</div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Quận / Huyện <span class="required-star">*</span></label>
-                            <select class="form-select" id="districtSelect" required>
-                                <option value="">-- Chọn Quận/Huyện --</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Phường / Xã <span class="required-star">*</span></label>
-                            <input class="form-control" list="wardDataList" id="wardInput" placeholder="Nhập tên phường..." required>
-                            <datalist id="wardDataList"></datalist>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Số nhà</label>
-                            <input type="text" class="form-control" id="addressNumber">
-                        </div>
-                        <div class="col-md-9">
-                            <label class="form-label">Tên đường / Ấp <span class="required-star">*</span></label>
-                            <input type="text" class="form-control" id="streetName" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Thông tin đất (Thửa/Tờ)</label>
-                            <input type="text" class="form-control" id="plotInfo">
-                        </div>
-                    </div>
-
-                    <div class="form-section-title">3. Phân loại & Mục đích</div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Hiện trạng <span class="required-star">*</span></label>
-                            <select class="form-select" id="landType">
-                                <option value="Đất trống">Đất trống</option>
-                                <option value="Đã có nhà/Công trình">Đã có nhà/Công trình</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Mục đích <span class="required-star">*</span></label>
-                            <select class="form-select" id="purpose">
-                                <option value="Cung cấp hiện trạng">Cung cấp hiện trạng quy hoạch</option>
-                                <option value="Xây dựng mới">Thỏa thuận an toàn Xây dựng mới</option>
-                                <option value="Cải tạo/Sửa chữa">Thỏa thuận an toàn Cải tạo/Sửa chữa</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="index.html" class="btn btn-light me-md-2">Hủy bỏ</a>
-                        <button type="submit" class="btn btn-success fw-bold" id="btnSave">
-                            <i class="fas fa-save me-2"></i>Lưu Hồ Sơ
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
-        <div class="text-center mt-3 text-muted small">Ver 1.7.1 (Fixed Edit Mode)</div>
+
+            <div class="section-card d-none" id="section2">
+                <div class="section-header bg-sec-2" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                    <span><i class="fas fa-tools me-2"></i>Phần 2. Giải quyết Hồ sơ</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div id="collapse2" class="collapse show">
+                    <div class="card-body p-4">
+                        
+                        <ul class="nav nav-tabs mb-3" id="p2Tabs">
+                            <li class="nav-item"><a class="nav-link active fw-bold" data-bs-toggle="tab" href="#tabSurvey">1. Khảo sát</a></li>
+                            <li class="nav-item"><a class="nav-link fw-bold" data-bs-toggle="tab" href="#tabDraft">2. Soạn thảo</a></li>
+                            <li class="nav-item"><a class="nav-link fw-bold" data-bs-toggle="tab" href="#tabReview">3. Xét duyệt</a></li>
+                            <li class="nav-item"><a class="nav-link fw-bold" data-bs-toggle="tab" href="#tabSign">4. Trình ký DO</a></li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tabSurvey">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ngày dự kiến khảo sát</label>
+                                        <input type="date" class="form-control" id="estSurveyDate">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ngày khảo sát thực tế</label>
+                                        <input type="date" class="form-control" id="actSurveyDate">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Biên bản khảo sát (Scan/Ảnh)</label>
+                                        <input type="file" class="form-control" id="surveyFile">
+                                        <div class="form-text">Upload biên bản viết tay tại hiện trường.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Ghi chú hiện trường</label>
+                                        <textarea class="form-control" id="surveyNote" rows="2" placeholder="Vd: Vi phạm khoảng cách 2m, yêu cầu hạ độ cao..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tabDraft">
+                                <div class="list-group">
+                                    <label class="list-group-item d-flex gap-3">
+                                        <input class="form-check-input flex-shrink-0" type="checkbox" id="checkDraftNotify">
+                                        <span>Dự thảo Thông báo an toàn</span>
+                                    </label>
+                                    <label class="list-group-item d-flex gap-3">
+                                        <input class="form-check-input flex-shrink-0" type="checkbox" id="checkDraftResponse">
+                                        <span>Dự thảo Văn bản phúc đáp</span>
+                                    </label>
+                                    <label class="list-group-item d-flex gap-3">
+                                        <input class="form-check-input flex-shrink-0" type="checkbox" id="checkDraftAgree">
+                                        <span>Dự thảo Biên bản thỏa thuận</span>
+                                    </label>
+                                    <label class="list-group-item d-flex gap-3">
+                                        <input class="form-check-input flex-shrink-0" type="checkbox" id="checkDraftInvite">
+                                        <span>Dự thảo Giấy mời ký</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tabReview">
+                                <div class="mb-4">
+                                    <label class="fw-bold text-primary"><i class="fas fa-user-tie me-2"></i>Ý kiến Tổ trưởng</label>
+                                    <div class="review-box" id="boxTeamLeader">
+                                        <select class="form-select mb-2" id="statusTeamLeader">
+                                            <option value="Chờ xem xét">Chờ xem xét</option>
+                                            <option value="Đồng ý">Đồng ý (Chuyển Đội phó)</option>
+                                            <option value="Trả lại">Trả lại (Yêu cầu làm lại)</option>
+                                        </select>
+                                        <textarea class="form-control" id="commentTeamLeader" placeholder="Nhập ý kiến chỉ đạo..."></textarea>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="fw-bold text-danger"><i class="fas fa-user-shield me-2"></i>Ý kiến Đội phó</label>
+                                    <div class="review-box" id="boxDepCaptain">
+                                        <select class="form-select mb-2" id="statusDepCaptain">
+                                            <option value="Chờ xem xét">Chờ xem xét</option>
+                                            <option value="Đồng ý">Đồng ý (Duyệt)</option>
+                                            <option value="Trả lại">Trả lại</option>
+                                        </select>
+                                        <textarea class="form-control" id="commentDepCaptain" placeholder="Nhập ý kiến chỉ đạo..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="tabSign">
+                                <div class="alert alert-info small">
+                                    <i class="fas fa-info-circle me-2"></i>Sau khi Đội phó duyệt, mời khách lên ký BBTT, sau đó Tổ trưởng trình D-Office.
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="checkCustomerSigned">
+                                    <label class="form-check-label fw-bold" for="checkCustomerSigned">Khách hàng đã lên ký Biên bản</label>
+                                </div>
+                                <hr>
+                                <label class="fw-bold mb-3">Tiến trình D-Office:</label>
+                                <div class="do-timeline">
+                                    <div class="do-line"></div>
+                                    <div class="do-step" onclick="setDoStep(1)" id="doStep1">
+                                        <div class="do-circle"><i class="fas fa-paper-plane"></i></div>
+                                        <small>Đã trình</small>
+                                    </div>
+                                    <div class="do-step" onclick="setDoStep(2)" id="doStep2">
+                                        <div class="do-circle"><i class="fas fa-check"></i></div>
+                                        <small>Đội phó qua</small>
+                                    </div>
+                                    <div class="do-step" onclick="setDoStep(3)" id="doStep3">
+                                        <div class="do-circle"><i class="fas fa-signature"></i></div>
+                                        <small>PGĐ Ký</small>
+                                    </div>
+                                    <div class="do-step" onclick="setDoStep(4)" id="doStep4">
+                                        <div class="do-circle"><i class="fas fa-stamp"></i></div>
+                                        <small>Phát hành</small>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="doStatusValue" value="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card d-none" id="section3">
+                <div class="section-header bg-sec-3" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                    <span><i class="fas fa-flag-checkered me-2"></i>Phần 3. Kết thúc Hồ sơ</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div id="collapse3" class="collapse show">
+                    <div class="card-body p-4 text-center">
+                        <p class="text-muted">Hồ sơ đã được phát hành. Vui lòng cập nhật file cuối cùng để lưu trữ.</p>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">File Văn bản đã phát hành (PDF)</label>
+                            <input type="file" class="form-control" id="finalDocFile">
+                        </div>
+                        <div class="form-check d-inline-block mb-3">
+                            <input class="form-check-input" type="checkbox" id="checkCloseRecord">
+                            <label class="form-check-label text-danger fw-bold" for="checkCloseRecord">Xác nhận Kết thúc hồ sơ</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fixed-bottom bg-white border-top p-3 shadow text-end">
+                <div class="container" style="max-width: 900px;">
+                    <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='index.html'">Đóng</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4"><i class="fas fa-save me-2"></i>Lưu Cập Nhật</button>
+                </div>
+            </div>
+
+        </form>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -145,185 +271,99 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // 1. CONFIG
+        // --- 1. CONFIG ---
         const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        // 2. DATA & UI
-        const hcmData = {
-            "Quận 12": ["Phường An Phú Đông", "Phường Đông Hưng Thuận", "Phường Hiệp Thành", "Phường Tân Chánh Hiệp", "Phường Tân Hưng Thuận", "Phường Tân Thới Hiệp", "Phường Tân Thới Nhất", "Phường Thạnh Lộc", "Phường Thạnh Xuân", "Phường Thới An", "Phường Trung Mỹ Tây"],
-            "Gò Vấp": ["Phường 1", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Phường 16"],
-            "Hóc Môn": ["Thị trấn Hóc Môn", "Xã Bà Điểm", "Xã Đông Thạnh", "Xã Nhị Bình", "Xã Tân Hiệp", "Xã Tân Thới Nhì", "Xã Tân Xuân", "Xã Thới Tam Thôn", "Xã Trung Chánh", "Xã Xuân Thới Đông", "Xã Xuân Thới Sơn", "Xã Xuân Thới Thượng"]
-        };
-        const districtSelect = document.getElementById('districtSelect');
-        const wardDataList = document.getElementById('wardDataList');
-        const wardInput = document.getElementById('wardInput');
-
-        // Init Data
-        for (const d in hcmData) {
-            let opt = document.createElement('option'); opt.value = d; opt.textContent = d; districtSelect.appendChild(opt);
-        }
-        function populateWards(district) {
-            wardDataList.innerHTML = "";
-            if (district && hcmData[district]) {
-                hcmData[district].forEach(w => {
-                    let opt = document.createElement('option'); opt.value = w; wardDataList.appendChild(opt);
-                });
-            }
-        }
-        districtSelect.addEventListener('change', function() { populateWards(this.value); wardInput.value = ""; });
-        function copyToOwner() { document.getElementById('ownerName').value = document.getElementById('applicantName').value; }
-
-        // 3. LOGIC CHÍNH: KIỂM TRA CHẾ ĐỘ SỬA
-        // Chạy ngay khi tải trang
+        // --- 2. GLOBAL VARIABLES ---
         const urlParams = new URLSearchParams(window.location.search);
         const recordId = urlParams.get('id');
+        let currentRecord = null;
 
+        // --- 3. INIT LOGIC ---
         if (recordId) {
-            // -- CHẾ ĐỘ SỬA --
-            console.log("Phát hiện chế độ Sửa. ID:", recordId);
-            document.getElementById('pageTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Cập nhật Hồ sơ';
-            document.getElementById('editModeBadge').classList.remove('d-none');
-            document.getElementById('btnSave').innerHTML = '<i class="fas fa-save me-2"></i>Cập nhật';
-            document.getElementById('uploadSection').style.display = 'none'; // Ẩn phần upload khi sửa
-            
-            // Gọi hàm tải dữ liệu
             loadRecordData(recordId);
         } else {
-            // -- CHẾ ĐỘ MỚI --
-            console.log("Chế độ Tạo mới");
+            // Chế độ tạo mới: Chỉ hiện phần 1
             document.getElementById('submissionDate').valueAsDate = new Date();
         }
 
+        // --- 4. LOAD DATA & WORKFLOW LOGIC ---
         async function loadRecordData(id) {
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
                 const doc = await db.collection('records').doc(id).get();
-                if (doc.exists) {
-                    const d = doc.data();
-                    // Điền dữ liệu
-                    document.getElementById('submissionDate').value = d.submissionDate;
-                    document.getElementById('applicantName').value = d.applicantName;
-                    document.getElementById('ownerName').value = d.ownerName;
-                    document.getElementById('phoneNumber').value = d.phoneNumber || '';
-                    document.getElementById('addressNumber').value = d.number || '';
-                    document.getElementById('streetName').value = d.street;
-                    document.getElementById('plotInfo').value = d.plotInfo || '';
-                    document.getElementById('landType').value = d.landType;
-                    document.getElementById('purpose').value = d.purpose;
+                if (!doc.exists) { alert("Không tìm thấy!"); window.location.href='index.html'; return; }
+                
+                currentRecord = doc.data();
+                const d = currentRecord;
+
+                // --- HEADER INFO ---
+                document.getElementById('recordIdDisplay').textContent = "Hồ sơ: " + id.substr(0,6).toUpperCase();
+                document.getElementById('solverDisplay').textContent = d.solver ? `Người xử lý: ${d.solver}` : "Chưa phân công";
+
+                // --- FILL PART 1 (Tiếp nhận) ---
+                document.getElementById('submissionDate').value = d.submissionDate;
+                document.getElementById('applicantName').value = d.applicantName;
+                document.getElementById('ownerName').value = d.ownerName;
+                document.getElementById('phoneNumber').value = d.phoneNumber || '';
+                document.getElementById('fullAddress').value = d.fullAddress || (d.number + ' ' + d.street);
+                document.getElementById('purpose').value = d.purpose;
+                document.getElementById('landType').value = d.landType;
+
+                // ** LOGIC KHÓA PHẦN 1 **
+                // Nếu đã có người xử lý -> Khóa Phần 1
+                if (d.solver) {
+                    document.getElementById('section1').classList.add('is-locked');
+                    document.getElementById('uploadArea').style.display = 'none'; // Ẩn nút upload PDF
+                    document.getElementById('collapse1').classList.remove('show'); // Thu gọn
                     
-                    // Xử lý địa chính
-                    document.getElementById('districtSelect').value = d.district;
-                    populateWards(d.district); // Nạp lại phường cho quận này
-                    document.getElementById('wardInput').value = d.ward;
-                } else {
-                    alert("Không tìm thấy hồ sơ!");
+                    // Mở Phần 2
+                    document.getElementById('section2').classList.remove('d-none');
                 }
-            } catch (err) {
-                console.error(err);
-                alert("Lỗi tải dữ liệu: " + err.message);
-            } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
-            }
+
+                // --- FILL PART 2 (Giải quyết) ---
+                if (d.solver) {
+                    document.getElementById('estSurveyDate').value = d.estSurveyDate || '';
+                    document.getElementById('actSurveyDate').value = d.actSurveyDate || '';
+                    document.getElementById('surveyNote').value = d.surveyNote || '';
+                    
+                    document.getElementById('checkDraftNotify').checked = d.draftNotify || false;
+                    document.getElementById('checkDraftResponse').checked = d.draftResponse || false;
+                    document.getElementById('checkDraftAgree').checked = d.draftAgree || false;
+                    document.getElementById('checkDraftInvite').checked = d.draftInvite || false;
+
+                    // Review Status
+                    document.getElementById('statusTeamLeader').value = d.statusTeamLeader || 'Chờ xem xét';
+                    document.getElementById('commentTeamLeader').value = d.commentTeamLeader || '';
+                    styleReviewBox('boxTeamLeader', d.statusTeamLeader);
+
+                    document.getElementById('statusDepCaptain').value = d.statusDepCaptain || 'Chờ xem xét';
+                    document.getElementById('commentDepCaptain').value = d.commentDepCaptain || '';
+                    styleReviewBox('boxDepCaptain', d.statusDepCaptain);
+
+                    document.getElementById('checkCustomerSigned').checked = d.customerSigned || false;
+                    
+                    // D-Office Timeline
+                    setDoStep(d.doStep || 0);
+                    
+                    // ** LOGIC MỞ PHẦN 3 **
+                    // Nếu D-Office đã Phát hành (Step 4) -> Mở Phần 3
+                    if (d.doStep >= 4) {
+                        document.getElementById('section3').classList.remove('d-none');
+                        document.getElementById('checkCloseRecord').checked = d.isClosed || false;
+                        if(d.isClosed) document.getElementById('section3').classList.add('is-locked');
+                    }
+                }
+
+            } catch (err) { console.error(err); } 
+            finally { document.getElementById('loading-overlay').style.display = 'none'; }
         }
 
-        // 4. XỬ LÝ LƯU & PDF PARSER (Giữ nguyên từ Ver 1.7)
-        document.getElementById('fileInput').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('loadingText').textContent = "Đang đọc PDF...";
-            document.getElementById('loading-overlay').style.display = 'flex';
-            try {
-                const ab = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument(ab).promise;
-                const page = await pdf.getPage(1);
-                const txt = await page.getTextContent();
-                const text = txt.items.map(s => s.str).join(" ").replace(/\s+/g, ' ');
-                
-                // Parse Name
-                const nameM = text.match(/(?:Tên tổ chức\/cá nhân|Ông\/Bà|Kính gửi)[:\s\.]+(.*?)(?:Địa chỉ|Sinh ngày)/i);
-                if(nameM) { document.getElementById('applicantName').value = nameM[1].replace(/[:\.]/g,'').trim(); document.getElementById('ownerName').value = document.getElementById('applicantName').value; }
-                
-                // Parse Phone
-                const phM = text.match(/(?:0\d{9}|84\d{9}|0\d{3}[\s\.]\d{3}[\s\.]\d{3})/);
-                if(phM) document.getElementById('phoneNumber').value = phM[0].replace(/[\s\.]/g, '');
-
-                // Parse District
-                for(const d in hcmData) {
-                    if(text.toLowerCase().includes(d.toLowerCase())) {
-                        document.getElementById('districtSelect').value = d; populateWards(d); break;
-                    }
-                }
-                // Parse Ward
-                if(document.getElementById('districtSelect').value){
-                    const ws = hcmData[document.getElementById('districtSelect').value];
-                    for(const w of ws) {
-                        if(text.toLowerCase().includes(w.replace('Phường','').replace('Xã','').trim().toLowerCase())) {
-                            document.getElementById('wardInput').value = w; break;
-                        }
-                    }
-                }
-                
-                // Parse Address
-                const addrM = text.match(/(?:Địa chỉ|địa chỉ)[:\s]+(.*?)(?:Quận|Huyện|Phường|Xã)/i);
-                if(addrM) {
-                    const parts = addrM[1].trim().split(/,| đường /i);
-                    if(parts[0]) document.getElementById('addressNumber').value = parts[0].trim();
-                    if(parts[1]) document.getElementById('streetName').value = parts[1].trim();
-                }
-
-                alert("Đã nhập liệu xong!");
-            } catch(e) { alert("Lỗi đọc PDF"); } 
-            finally { document.getElementById('loading-overlay').style.display = 'none'; }
-        });
-
-        // Auth Check
-        auth.onAuthStateChanged(user => {
-            if (!user) window.location.href = "index.html";
-            else db.collection('users').doc(user.email).get().then(d => { if(d.exists) document.getElementById('currentUserDisplay').textContent = d.data().fullName; });
-        });
-
-        // Submit Form
-        document.getElementById('recordForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            document.getElementById('loadingText').textContent = "Đang lưu...";
-            document.getElementById('loading-overlay').style.display = 'flex';
-            const user = auth.currentUser;
-            const data = {
-                submissionDate: document.getElementById('submissionDate').value,
-                applicantName: document.getElementById('applicantName').value,
-                ownerName: document.getElementById('ownerName').value,
-                phoneNumber: document.getElementById('phoneNumber').value,
-                district: districtSelect.value,
-                ward: wardInput.value,
-                street: document.getElementById('streetName').value,
-                number: document.getElementById('addressNumber').value,
-                plotInfo: document.getElementById('plotInfo').value,
-                fullAddress: `${document.getElementById('addressNumber').value} ${document.getElementById('streetName').value}, ${wardInput.value}, ${districtSelect.value}`,
-                landType: document.getElementById('landType').value,
-                purpose: document.getElementById('purpose').value,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedBy: user.email
-            };
-
-            try {
-                if (recordId) {
-                    await db.collection('records').doc(recordId).update(data);
-                    alert("Cập nhật thành công!");
-                } else {
-                    data.status = 'Mới tiếp nhận';
-                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                    data.createdBy = user.email;
-                    await db.collection('records').add(data);
-                    alert("Tạo mới thành công!");
-                }
-                window.location.href = "index.html";
-            } catch (err) { alert("Lỗi: " + err.message); }
-            finally { document.getElementById('loading-overlay').style.display = 'none'; }
-        });
-    </script>
-</body>
-</html>
+        // --- 5. HELPER FUNCTIONS ---
+        
+        // PDF Parser (Giữ nguyên từ Ver 1.7)
+        document.getElementById('fileInput').addEventListener('
