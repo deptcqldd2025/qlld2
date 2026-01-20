@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Hồ Sơ - Ver 1.8</title>
+    <title>Quản Lý Hồ Sơ - Ver 1.9</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -15,15 +15,20 @@
         .table-hover tbody tr:hover { background-color: #f8f9fa; }
         .avatar-circle { width: 30px; height: 30px; background-color: #0d6efd; color: white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; margin-right: 8px; }
         
-        /* Doc Icons */
         .btn-doc { padding: 2px 6px; font-size: 0.75rem; border: 1px solid #dee2e6; color: #6c757d; background: white; margin-right: 2px; transition: all 0.2s; }
         .btn-doc:hover { background-color: #e9ecef; color: #0d6efd; }
-        .btn-doc.active-doc { background-color: #e7f1ff; color: #0d6efd; border-color: #9ec5fe; font-weight: 500; }
-
-        /* Progress Bar */
+        
         .progress-slim { height: 6px; border-radius: 3px; background-color: #e9ecef; width: 100px; margin-top: 5px; }
         
         #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: none; justify-content: center; align-items: center; }
+        
+        /* Animation cho nút phân công */
+        .btn-assign { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+        }
     </style>
 </head>
 <body>
@@ -59,11 +64,11 @@
     <div id="dashboard-screen" class="screen">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
             <div class="container-fluid px-4">
-                <a class="navbar-brand fw-bold" href="#"><i class="fas fa-bolt me-2"></i>QLHS Ver 1.8</a>
+                <a class="navbar-brand fw-bold" href="#"><i class="fas fa-bolt me-2"></i>QLHS Ver 1.9</a>
                 <div class="d-flex align-items-center text-white">
                     <div class="text-end me-3 d-none d-sm-block">
                         <div id="navUserName" class="fw-bold">...</div>
-                        <div class="small opacity-75">Nhân viên</div>
+                        <div class="small opacity-75">Tổ trưởng / Nhân viên</div>
                     </div>
                     <button id="btnLogout" class="btn btn-sm btn-light text-primary fw-bold">Thoát</button>
                 </div>
@@ -89,8 +94,7 @@
                                 <tr>
                                     <th class="ps-3">Ngày nộp</th>
                                     <th>Chủ hồ sơ / Địa chỉ</th>
-                                    <th>Người xử lý</th>
-                                    <th>Tiến độ / Trạng thái</th>
+                                    <th>Người xử lý</th> <th>Tiến độ / Trạng thái</th>
                                     <th>Văn bản / Hồ sơ</th>
                                     <th class="text-center">Tác vụ</th>
                                 </tr>
@@ -123,10 +127,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="small text-muted fw-bold">NGƯỜI XỬ LÝ</label>
-                            <div class="d-flex align-items-center mt-1">
-                                <span class="avatar-circle bg-success" id="mSolverAvatar">?</span>
-                                <span id="mSolverName" class="fw-bold">Chưa giao việc</span>
-                            </div>
+                            <div id="mSolverDisplay"></div>
                         </div>
                     </div>
                     <hr>
@@ -148,17 +149,71 @@
                             </div>
                         </div>
                     </div>
-                    <hr>
-                    <label class="small text-muted fw-bold mb-2">DANH SÁCH VĂN BẢN</label>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button class="btn btn-outline-primary btn-sm"><i class="fas fa-file-alt me-1"></i> BB Khảo sát</button>
-                        <button class="btn btn-outline-success btn-sm"><i class="fas fa-file-contract me-1"></i> BB Thỏa thuận</button>
-                        <button class="btn btn-outline-warning btn-sm"><i class="fas fa-file-signature me-1"></i> Dự thảo Phúc đáp</button>
-                        <button class="btn btn-outline-info btn-sm"><i class="fas fa-bullhorn me-1"></i> Thông báo</button>
-                    </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-user-tag me-2"></i>Phân công Xử lý</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-3">Chọn chuyên viên phụ trách hồ sơ này:</p>
+                    <form id="assignForm">
+                        <input type="hidden" id="assignRecordId">
+                        <div class="list-group">
+                            <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 cursor-pointer">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="solverOption" value="Nguyễn Ngọc Thành Trường" checked>
+                                <span class="avatar-circle bg-info text-white">T</span>
+                                <div>
+                                    <strong class="d-block">Nguyễn Ngọc Thành Trường</strong>
+                                    <small class="text-muted">Chuyên viên</small>
+                                </div>
+                            </label>
+                            <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 cursor-pointer">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="solverOption" value="Nguyễn Thanh Khoa">
+                                <span class="avatar-circle bg-info text-white">K</span>
+                                <div>
+                                    <strong class="d-block">Nguyễn Thanh Khoa</strong>
+                                    <small class="text-muted">Chuyên viên</small>
+                                </div>
+                            </label>
+                            <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 cursor-pointer">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="solverOption" value="Trần Quang Nhã">
+                                <span class="avatar-circle bg-info text-white">N</span>
+                                <div>
+                                    <strong class="d-block">Trần Quang Nhã</strong>
+                                    <small class="text-muted">Chuyên viên</small>
+                                </div>
+                            </label>
+                            <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 cursor-pointer">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="solverOption" value="Nguyễn Thái Sơn">
+                                <span class="avatar-circle bg-info text-white">S</span>
+                                <div>
+                                    <strong class="d-block">Nguyễn Thái Sơn</strong>
+                                    <small class="text-muted">Chuyên viên</small>
+                                </div>
+                            </label>
+                            <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 cursor-pointer">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="solverOption" value="Nguyễn Hoàng Trung">
+                                <span class="avatar-circle bg-info text-white">T</span>
+                                <div>
+                                    <strong class="d-block">Nguyễn Hoàng Trung</strong>
+                                    <small class="text-muted">Chuyên viên</small>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="mt-4 d-grid">
+                            <button type="submit" class="btn btn-primary fw-bold">Xác nhận Phân công</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -170,7 +225,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // 1. CONFIG
         const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -179,6 +233,7 @@
 
         let localRecordsMap = {}; 
         let viewModal;
+        let assignModal; // Modal phân công
 
         const UI = {
             screens: { login: document.getElementById('login-screen'), updateInfo: document.getElementById('update-info-screen'), dashboard: document.getElementById('dashboard-screen') },
@@ -187,7 +242,7 @@
             toggleLoader(show) { this.loader.style.display = show ? 'flex' : 'none'; }
         };
 
-        // 2. AUTH
+        // AUTH
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 const doc = await db.collection('users').doc(user.email).get();
@@ -196,10 +251,10 @@
                     UI.showScreen('dashboard');
                     loadRecords();
                     viewModal = new bootstrap.Modal(document.getElementById('viewDetailModal'));
+                    assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
                 } else { UI.showScreen('updateInfo'); }
             } else { UI.showScreen('login'); }
         });
-
         document.getElementById('btnLogin').addEventListener('click', () => auth.signInWithPopup(provider));
         document.getElementById('btnLogout').addEventListener('click', () => auth.signOut().then(() => window.location.reload()));
         document.getElementById('formUpdateInfo').addEventListener('submit', async (e) => {
@@ -209,7 +264,7 @@
             window.location.reload();
         });
 
-        // 3. DASHBOARD LOGIC (Updated Ver 1.8)
+        // DASHBOARD LOGIC (Ver 1.9)
         function loadRecords() {
             const tbody = document.getElementById('recordsTableBody');
             const totalLabel = document.getElementById('totalRecords');
@@ -229,43 +284,45 @@
                         const id = doc.id;
                         localRecordsMap[id] = { ...d, id };
 
-                        // --- LOGIC XỬ LÝ DỮ LIỆU HIỂN THỊ ---
-                        
-                        // 1. Người xử lý (Mockup logic nếu chưa có dữ liệu)
-                        const solver = d.solver || 'Chưa phân công';
-                        const solverInitial = solver.charAt(0).toUpperCase();
-                        const solverColor = d.solver ? 'bg-primary' : 'bg-secondary';
+                        // --- XỬ LÝ NGƯỜI GIẢI QUYẾT (QUAN TRỌNG) ---
+                        let solverCell = '';
+                        if (d.solver) {
+                            // Đã có người -> Hiển thị Avatar & Tên
+                            const initial = d.solver.split(' ').pop().charAt(0).toUpperCase(); // Lấy chữ cái đầu của Tên
+                            solverCell = `
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar-circle bg-primary">${initial}</span>
+                                    <span class="small fw-bold text-dark">${d.solver}</span>
+                                </div>
+                            `;
+                        } else {
+                            // Chưa có người -> Hiển thị nút Chuyển tiếp (Phân công)
+                            solverCell = `
+                                <button class="btn btn-sm btn-outline-danger btn-assign fw-bold" onclick="openAssignModal('${id}')">
+                                    <i class="fas fa-share me-1"></i> Phân công
+                                </button>
+                            `;
+                        }
 
-                        // 2. Tiến độ (Mockup: dựa trên Status)
+                        // Tiến độ & Status
                         let progress = 0;
                         if(d.status === 'Mới tiếp nhận') progress = 10;
                         else if(d.status === 'Đang khảo sát') progress = 40;
                         else if(d.status === 'Đang soạn thảo') progress = 70;
                         else if(d.status === 'Đã duyệt') progress = 100;
                         
-                        // 3. Status Badge Color
                         const statusClass = d.status === 'Đã duyệt' ? 'bg-success' : (d.status === 'Mới tiếp nhận' ? 'bg-info' : 'bg-warning');
-
-                        // 4. Khóa
                         const isLocked = d.isLocked === true || d.status === 'Đã duyệt';
                         const editAction = isLocked ? '' : "handleEdit('" + id + "')";
 
                         const row = `
                             <tr>
                                 <td class="ps-3 text-muted small">${d.submissionDate || '---'}</td>
-                                
                                 <td style="max-width: 250px; white-space: normal;">
                                     <div class="fw-bold text-dark">${d.ownerName}</div>
                                     <div class="small text-muted"><i class="fas fa-map-marker-alt me-1"></i>${d.street}</div>
                                 </td>
-
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <span class="avatar-circle ${solverColor}" style="width:24px; height:24px; font-size:10px;">${solverInitial}</span>
-                                        <span class="small fw-medium">${solver}</span>
-                                    </div>
-                                </td>
-
+                                <td>${solverCell}</td>
                                 <td>
                                     <div class="d-flex align-items-center justify-content-between">
                                         <span class="badge ${statusClass} rounded-pill border border-white shadow-sm">${d.status || 'Mới'}</span>
@@ -275,7 +332,6 @@
                                         <div class="progress-bar ${statusClass}" role="progressbar" style="width: ${progress}%"></div>
                                     </div>
                                 </td>
-
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-doc" title="Biên bản Khảo sát"><i class="fas fa-clipboard-list"></i> KS</button>
@@ -284,11 +340,10 @@
                                         <button class="btn btn-doc" title="Thông báo"><i class="fas fa-bell"></i> TB</button>
                                     </div>
                                 </td>
-
                                 <td class="text-center">
                                     <div class="btn-group shadow-sm">
-                                        <button class="btn btn-sm btn-light border" onclick="handleView('${id}')" title="Xem chi tiết"><i class="fas fa-eye text-primary"></i></button>
-                                        <button class="btn btn-sm btn-light border ${isLocked ? 'disabled text-muted' : ''}" onclick="${editAction}" title="Sửa"><i class="fas fa-pen text-secondary"></i></button>
+                                        <button class="btn btn-sm btn-light border" onclick="handleView('${id}')"><i class="fas fa-eye text-primary"></i></button>
+                                        <button class="btn btn-sm btn-light border ${isLocked ? 'disabled text-muted' : ''}" onclick="${editAction}"><i class="fas fa-pen text-secondary"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -299,25 +354,61 @@
             });
         }
 
-        // --- 4. ACTIONS ---
+        // --- CHỨC NĂNG PHÂN CÔNG (ASSIGNMENT) ---
+        window.openAssignModal = function(id) {
+            document.getElementById('assignRecordId').value = id;
+            assignModal.show();
+        }
+
+        document.getElementById('assignForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('assignRecordId').value;
+            // Lấy giá trị radio được chọn
+            const selectedSolver = document.querySelector('input[name="solverOption"]:checked').value;
+            const user = auth.currentUser;
+
+            if(!id || !selectedSolver) return;
+
+            UI.toggleLoader(true);
+            try {
+                await db.collection('records').doc(id).update({
+                    solver: selectedSolver,
+                    status: 'Đang khảo sát', // Tự động chuyển trạng thái khi đã có người
+                    assignedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    assignedBy: user.email
+                });
+                assignModal.hide();
+                // Không cần reload, onSnapshot sẽ tự cập nhật giao diện
+            } catch (error) {
+                alert("Lỗi khi phân công: " + error.message);
+            } finally {
+                UI.toggleLoader(false);
+            }
+        });
+
+        // --- CÁC HÀM CŨ ---
         window.handleView = function(id) {
             const r = localRecordsMap[id];
             if (!r) return;
-
             document.getElementById('mApplicant').textContent = 'Người nộp: ' + r.applicantName;
             document.getElementById('mOwner').textContent = r.ownerName;
             
-            // Xử lý thông tin người xử lý trong Modal
-            const solver = r.solver || 'Chưa phân công';
-            document.getElementById('mSolverName').textContent = solver;
-            document.getElementById('mSolverAvatar').textContent = solver.charAt(0).toUpperCase();
-            document.getElementById('mSolverAvatar').className = r.solver ? 'avatar-circle bg-primary' : 'avatar-circle bg-secondary';
+            // Hiển thị người xử lý trong Modal
+            if (r.solver) {
+                const initial = r.solver.split(' ').pop().charAt(0).toUpperCase();
+                document.getElementById('mSolverDisplay').innerHTML = `
+                    <div class="d-flex align-items-center mt-1">
+                        <span class="avatar-circle bg-primary">${initial}</span>
+                        <span class="fw-bold">${r.solver}</span>
+                    </div>`;
+            } else {
+                document.getElementById('mSolverDisplay').innerHTML = `<span class="text-muted fw-bold">Chưa phân công</span>`;
+            }
 
             document.getElementById('mAddress').textContent = r.fullAddress || (r.number + ' ' + r.street);
             document.getElementById('mPlot').textContent = r.plotInfo || 'Thông tin đất: (Trống)';
             document.getElementById('mPurpose').textContent = r.purpose;
             
-            // Status & Progress in Modal
             let progress = 0;
             if(r.status === 'Mới tiếp nhận') progress = 10;
             else if(r.status === 'Đang khảo sát') progress = 40;
@@ -335,7 +426,6 @@
         window.handleEdit = function(id) {
             window.location.href = 'new.html?id=' + id;
         }
-
     </script>
 </body>
 </html>
