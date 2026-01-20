@@ -120,33 +120,27 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // --- 1. CONFIG ---
         const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // --- 2. DỮ LIỆU ĐỊA CHÍNH ---
         const hcmData = {
             "Quận 12": ["Phường An Phú Đông", "Phường Đông Hưng Thuận", "Phường Hiệp Thành", "Phường Tân Chánh Hiệp", "Phường Tân Hưng Thuận", "Phường Tân Thới Hiệp", "Phường Tân Thới Nhất", "Phường Thạnh Lộc", "Phường Thạnh Xuân", "Phường Thới An", "Phường Trung Mỹ Tây"],
             "Gò Vấp": ["Phường 1", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Phường 16", "Phường 17"],
-            "Hóc Môn": ["Thị trấn Hóc Môn", "Xã Bà Điểm", "Xã Đông Thạnh", "Xã Nhị Bình", "Xã Tân Hiệp", "Xã Tân Thới Nhì", "Xã Tân Xuân", "Xã Thới Tam Thôn", "Xã Trung Chánh", "Xã Xuân Thới Đông", "Xã Xuân Thới Sơn", "Xã Xuân Thới Thượng"],
-            // Thêm các quận khác nếu cần
+            "Hóc Môn": ["Thị trấn Hóc Môn", "Xã Bà Điểm", "Xã Đông Thạnh", "Xã Nhị Bình", "Xã Tân Hiệp", "Xã Tân Thới Nhì", "Xã Tân Xuân", "Xã Thới Tam Thôn", "Xã Trung Chánh", "Xã Xuân Thới Đông", "Xã Xuân Thới Sơn", "Xã Xuân Thới Thượng"]
         };
 
-        // --- 3. KHỞI TẠO UI ---
         const districtSelect = document.getElementById('districtSelect');
         const wardDataList = document.getElementById('wardDataList');
         const wardInput = document.getElementById('wardInput');
         
-        // Populate Districts
         for (const d in hcmData) {
             const opt = document.createElement('option');
             opt.value = d; opt.textContent = d;
             districtSelect.appendChild(opt);
         }
 
-        // Hàm cập nhật danh sách phường
         function populateWards(district) {
             wardDataList.innerHTML = "";
             if (district && hcmData[district]) {
@@ -160,22 +154,20 @@
 
         districtSelect.addEventListener('change', function() {
             populateWards(this.value);
-            wardInput.value = ""; // Xóa phường cũ khi đổi quận
+            wardInput.value = ""; 
         });
 
-        // --- 4. LOGIC EDIT MODE (QUAN TRỌNG) ---
+        // --- TỰ ĐỘNG PHÁT HIỆN CHẾ ĐỘ SỬA ---
         const urlParams = new URLSearchParams(window.location.search);
-        const recordId = urlParams.get('id'); // Lấy ID từ URL
+        const recordId = urlParams.get('id');
         
         if (recordId) {
-            // Chế độ Sửa
             document.getElementById('pageTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Cập nhật Hồ sơ';
             document.getElementById('editModeBadge').classList.remove('d-none');
             document.getElementById('btnSave').innerHTML = '<i class="fas fa-save me-2"></i>Cập nhật';
             document.title = "Cập nhật Hồ sơ";
             loadRecordData(recordId);
         } else {
-            // Chế độ Mới
             document.getElementById('submissionDate').valueAsDate = new Date();
         }
 
@@ -185,7 +177,6 @@
                 const doc = await db.collection('records').doc(id).get();
                 if (doc.exists) {
                     const d = doc.data();
-                    // Điền dữ liệu
                     document.getElementById('submissionDate').value = d.submissionDate;
                     document.getElementById('applicantName').value = d.applicantName;
                     document.getElementById('ownerName').value = d.ownerName;
@@ -195,9 +186,8 @@
                     document.getElementById('landType').value = d.landType;
                     document.getElementById('purpose').value = d.purpose;
 
-                    // Xử lý Quận/Phường
                     document.getElementById('districtSelect').value = d.district;
-                    populateWards(d.district); // Nạp lại list phường của quận đó
+                    populateWards(d.district); 
                     document.getElementById('wardInput').value = d.ward;
                 } else {
                     alert("Hồ sơ không tồn tại!");
@@ -211,7 +201,6 @@
             }
         }
 
-        // --- 5. LƯU DỮ LIỆU ---
         auth.onAuthStateChanged(user => {
             if (!user) window.location.href = "index.html";
             else {
@@ -247,11 +236,9 @@
 
             try {
                 if (recordId) {
-                    // Update
                     await db.collection('records').doc(recordId).update(data);
                     alert("Cập nhật thành công!");
                 } else {
-                    // Create New
                     data.status = 'Mới tiếp nhận';
                     data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                     data.createdBy = user.email;
