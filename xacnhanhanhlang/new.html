@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiếp Nhận Hồ Sơ - Ver 1.5</title>
+    <title>Xử Lý Hồ Sơ - Ver 1.6</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -34,11 +34,12 @@
 
     <div class="container pb-5" style="max-width: 800px;">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h4 class="card-title mb-0 text-primary"><i class="fas fa-folder-plus me-2"></i>Tiếp nhận Hồ sơ (Ver 1.5)</h4>
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0 text-primary" id="pageTitle"><i class="fas fa-folder-plus me-2"></i>Tiếp nhận Hồ sơ</h4>
+                <span class="badge bg-warning text-dark d-none" id="editModeBadge">CHẾ ĐỘ CHỈNH SỬA</span>
             </div>
             <div class="card-body p-4">
-                <form id="newRecordForm">
+                <form id="recordForm">
                     
                     <div class="form-section-title">1. Thông tin Hồ sơ</div>
                     <div class="row g-3">
@@ -62,13 +63,12 @@
                             <label class="form-label">Quận / Huyện <span class="required-star">*</span></label>
                             <select class="form-select" id="districtSelect" required>
                                 <option value="">-- Chọn Quận/Huyện --</option>
-                                </select>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Phường / Xã <span class="required-star">*</span></label>
-                            <input class="form-control" list="wardDataList" id="wardInput" placeholder="Nhập tên phường để lọc..." required>
-                            <datalist id="wardDataList">
-                                </datalist>
+                            <input class="form-control" list="wardDataList" id="wardInput" placeholder="Nhập tên phường..." required>
+                            <datalist id="wardDataList"></datalist>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Số nhà</label>
@@ -104,12 +104,15 @@
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="index.html" class="btn btn-light me-md-2">Hủy</a>
-                        <button type="submit" class="btn btn-success fw-bold"><i class="fas fa-save me-2"></i>Lưu Hồ Sơ</button>
+                        <a href="index.html" class="btn btn-light me-md-2">Hủy bỏ</a>
+                        <button type="submit" class="btn btn-success fw-bold" id="btnSave">
+                            <i class="fas fa-save me-2"></i>Lưu Hồ Sơ
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
+        <div class="text-center mt-3 text-muted small">Ver 1.6</div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -117,72 +120,117 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // --- CẤU HÌNH ---
+        // --- 1. CONFIG ---
         const firebaseConfig = { apiKey: "AIzaSyCzWjfcD5Dgq7V-i2izb9tKLR6QM6qWPQo", authDomain: "tavietnam-78ae8.firebaseapp.com", projectId: "tavietnam-78ae8", storageBucket: "tavietnam-78ae8.firebasestorage.app", messagingSenderId: "670121705534", appId: "1:670121705534:web:1027ad98550573ad37116f" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // --- DỮ LIỆU TP.HCM (Rút gọn các quận chính, có thể mở rộng) ---
+        // --- 2. DỮ LIỆU ĐỊA CHÍNH ---
         const hcmData = {
             "Quận 12": ["Phường An Phú Đông", "Phường Đông Hưng Thuận", "Phường Hiệp Thành", "Phường Tân Chánh Hiệp", "Phường Tân Hưng Thuận", "Phường Tân Thới Hiệp", "Phường Tân Thới Nhất", "Phường Thạnh Lộc", "Phường Thạnh Xuân", "Phường Thới An", "Phường Trung Mỹ Tây"],
             "Gò Vấp": ["Phường 1", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Phường 16", "Phường 17"],
             "Hóc Môn": ["Thị trấn Hóc Môn", "Xã Bà Điểm", "Xã Đông Thạnh", "Xã Nhị Bình", "Xã Tân Hiệp", "Xã Tân Thới Nhì", "Xã Tân Xuân", "Xã Thới Tam Thôn", "Xã Trung Chánh", "Xã Xuân Thới Đông", "Xã Xuân Thới Sơn", "Xã Xuân Thới Thượng"],
-            "Bình Tân": ["Phường An Lạc", "Phường An Lạc A", "Phường Bình Hưng Hòa", "Phường Bình Hưng Hòa A", "Phường Bình Hưng Hòa B", "Phường Bình Trị Đông", "Phường Bình Trị Đông A", "Phường Bình Trị Đông B", "Phường Tân Tạo", "Phường Tân Tạo A"],
-            "Tân Bình": ["Phường 1", "Phường 2", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15"],
-            "TP Thủ Đức": ["Phường An Khánh", "Phường An Lợi Đông", "Phường An Phú", "Phường Bình Chiểu", "Phường Bình Thọ", "Phường Bình Trưng Đông", "Phường Bình Trưng Tây", "Phường Cát Lái", "Phường Hiệp Bình Chánh", "Phường Hiệp Bình Phước", "Phường Hiệp Phú", "Phường Linh Chiểu", "Phường Linh Đông", "Phường Linh Tây", "Phường Linh Trung", "Phường Linh Xuân", "Phường Long Bình", "Phường Long Phước", "Phường Long Thạnh Mỹ", "Phường Long Trường", "Phường Phú Hữu", "Phường Phước Bình", "Phường Phước Long A", "Phường Phước Long B", "Phường Tam Bình", "Phường Tam Phú", "Phường Tân Phú", "Phường Tăng Nhơn Phú A", "Phường Tăng Nhơn Phú B", "Phường Thạnh Mỹ Lợi", "Phường Thảo Điền", "Phường Thủ Thiêm", "Phường Trường Thạnh", "Phường Trường Thọ"]
+            // Thêm các quận khác nếu cần
         };
 
-        // --- LOGIC XỬ LÝ ---
-        document.getElementById('submissionDate').valueAsDate = new Date();
+        // --- 3. KHỞI TẠO UI ---
         const districtSelect = document.getElementById('districtSelect');
-        const wardInput = document.getElementById('wardInput');
         const wardDataList = document.getElementById('wardDataList');
-
-        // 1. Nạp danh sách Quận
-        for (const district in hcmData) {
-            const option = document.createElement('option');
-            option.value = district;
-            option.textContent = district;
-            districtSelect.appendChild(option);
+        const wardInput = document.getElementById('wardInput');
+        
+        // Populate Districts
+        for (const d in hcmData) {
+            const opt = document.createElement('option');
+            opt.value = d; opt.textContent = d;
+            districtSelect.appendChild(opt);
         }
 
-        // 2. Sự kiện khi chọn Quận -> Cập nhật Phường
-        districtSelect.addEventListener('change', function() {
-            const selectedDistrict = this.value;
-            wardInput.value = ""; // Reset phường
-            wardDataList.innerHTML = ""; // Xóa list cũ
-
-            if (selectedDistrict && hcmData[selectedDistrict]) {
-                hcmData[selectedDistrict].forEach(ward => {
-                    const option = document.createElement('option');
-                    option.value = ward; // Giá trị hiển thị khi gõ
-                    wardDataList.appendChild(option);
+        // Hàm cập nhật danh sách phường
+        function populateWards(district) {
+            wardDataList.innerHTML = "";
+            if (district && hcmData[district]) {
+                hcmData[district].forEach(w => {
+                    const opt = document.createElement('option');
+                    opt.value = w;
+                    wardDataList.appendChild(opt);
                 });
             }
+        }
+
+        districtSelect.addEventListener('change', function() {
+            populateWards(this.value);
+            wardInput.value = ""; // Xóa phường cũ khi đổi quận
         });
 
-        // 3. Xử lý Lưu
+        // --- 4. LOGIC EDIT MODE (QUAN TRỌNG) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const recordId = urlParams.get('id'); // Lấy ID từ URL
+        
+        if (recordId) {
+            // Chế độ Sửa
+            document.getElementById('pageTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Cập nhật Hồ sơ';
+            document.getElementById('editModeBadge').classList.remove('d-none');
+            document.getElementById('btnSave').innerHTML = '<i class="fas fa-save me-2"></i>Cập nhật';
+            document.title = "Cập nhật Hồ sơ";
+            loadRecordData(recordId);
+        } else {
+            // Chế độ Mới
+            document.getElementById('submissionDate').valueAsDate = new Date();
+        }
+
+        async function loadRecordData(id) {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const doc = await db.collection('records').doc(id).get();
+                if (doc.exists) {
+                    const d = doc.data();
+                    // Điền dữ liệu
+                    document.getElementById('submissionDate').value = d.submissionDate;
+                    document.getElementById('applicantName').value = d.applicantName;
+                    document.getElementById('ownerName').value = d.ownerName;
+                    document.getElementById('addressNumber').value = d.number || '';
+                    document.getElementById('streetName').value = d.street;
+                    document.getElementById('plotInfo').value = d.plotInfo || '';
+                    document.getElementById('landType').value = d.landType;
+                    document.getElementById('purpose').value = d.purpose;
+
+                    // Xử lý Quận/Phường
+                    document.getElementById('districtSelect').value = d.district;
+                    populateWards(d.district); // Nạp lại list phường của quận đó
+                    document.getElementById('wardInput').value = d.ward;
+                } else {
+                    alert("Hồ sơ không tồn tại!");
+                    window.location.href = "index.html";
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi tải dữ liệu!");
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+
+        // --- 5. LƯU DỮ LIỆU ---
         auth.onAuthStateChanged(user => {
-            if(!user) window.location.href = "index.html";
+            if (!user) window.location.href = "index.html";
             else {
                 db.collection('users').doc(user.email).get().then(doc => {
-                    if(doc.exists) document.getElementById('currentUserDisplay').textContent = doc.data().fullName;
+                    if (doc.exists) document.getElementById('currentUserDisplay').textContent = doc.data().fullName;
                 });
             }
         });
 
-        document.getElementById('newRecordForm').addEventListener('submit', async (e) => {
+        document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             document.getElementById('loading-overlay').style.display = 'flex';
-
             const user = auth.currentUser;
+
             const data = {
                 submissionDate: document.getElementById('submissionDate').value,
                 applicantName: document.getElementById('applicantName').value,
                 ownerName: document.getElementById('ownerName').value || document.getElementById('applicantName').value,
                 
-                // Address Data
                 district: districtSelect.value,
                 ward: wardInput.value,
                 street: document.getElementById('streetName').value,
@@ -193,13 +241,29 @@
                 landType: document.getElementById('landType').value,
                 purpose: document.getElementById('purpose').value,
                 
-                status: 'Mới tiếp nhận',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                createdBy: user.email
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: user.email
             };
 
-            await db.collection('records').add(data);
-            window.location.href = "index.html";
+            try {
+                if (recordId) {
+                    // Update
+                    await db.collection('records').doc(recordId).update(data);
+                    alert("Cập nhật thành công!");
+                } else {
+                    // Create New
+                    data.status = 'Mới tiếp nhận';
+                    data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    data.createdBy = user.email;
+                    await db.collection('records').add(data);
+                    alert("Tiếp nhận mới thành công!");
+                }
+                window.location.href = "index.html";
+            } catch (error) {
+                console.error("Lỗi:", error);
+                alert("Lỗi: " + error.message);
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
         });
     </script>
 </body>
